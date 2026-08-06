@@ -127,7 +127,7 @@ html, body {
 /* ── CHARTS ROW ── */
 .charts-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 10px;
   flex-shrink: 0;
 }
@@ -280,8 +280,8 @@ tr.tot td:first-child { text-align: left; }
     <div id="panTong" class="pane active">
       <div class="kpi" id="kpi"></div>
       <div class="charts-row">
-        <div class="ch"><div class="ttl">Phiếu nhận theo tuần</div><canvas id="cNhan"></canvas></div>
-        <div class="ch"><div class="ttl">Tỉ lệ WoW theo vùng</div><canvas id="cTyLe"></canvas></div>
+        <div class="ch" style="min-height: 300px;"><div class="ttl">Phiếu nhận theo tuần</div><canvas id="cNhan"></canvas></div>
+        
       </div>
 
       <div class="sec">
@@ -330,7 +330,12 @@ tr.tot td:first-child { text-align: left; }
     </div>
 
     <!-- CHI TIẾT -->
-    <div id="panChi" class="pane paneGrid">
+    <div id="panChi" class="pane">
+      <div style="padding: 60px 20px; text-align: center; color: #999; background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.08);">
+        <p style="font-size: 16px; font-weight: 600;">Sheet Chi tiết</p>
+        <p style="font-size: 13px; margin-top: 8px;">Đang trong quá trình phát triển</p>
+      </div>
+      <!--
       <div class="sec">
         <div class="sec-hd">
           <span class="ttl">Số phiếu nhận vào 4 tuần gần nhất theo vùng</span>
@@ -380,7 +385,7 @@ tr.tot td:first-child { text-align: left; }
             <tbody></tbody>
           </table>
         </div>
-      </div>
+      </div> -->  <!-- end panChi hidden --> 
     </div>
 
     <div class="meta" id="meta"></div>
@@ -409,8 +414,6 @@ let D = FULL_DATA;
 const sortState = {}
 
 // ============================================================
-// AUTO-LOAD: Tự động tải file Excel theo tuần từ GitHub
-// ============================================================
 const GITHUB_CONFIG = {
   owner: 'dlquang011994',
   repo: 'BC-F.Plus-Weekly',
@@ -437,17 +440,15 @@ async function loadFromGitHub(fileName) {
   const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${encodeURIComponent(fileName)}`;
   const statusEl = document.getElementById('st');
   if (!statusEl) return false;
-  statusEl.textContent = `Đang tải ${fileName}...`;
   try {
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    if (!resp.ok) return false;
     const buffer = await resp.arrayBuffer();
     D = processWB(XLSX.read(buffer, {type:'array'}));
     statusEl.textContent = `✓ Tải tự động: ${fileName}`;
     refreshAll();
     return true;
   } catch(err) {
-    console.log('Lỗi:', err.message);
     return false;
   }
 }
@@ -464,7 +465,9 @@ async function tryAutoLoad() {
   }
   if (!success) {
     const st = document.getElementById('st');
-    if (st) st.textContent = 'Chưa có file. Vui lòng upload thủ công.';
+    if (st) st.textContent = 'Chưa có file trên GitHub. Vui lòng upload thủ công.';
+    // Khi mở từ local, giữ nguyên FULL_DATA
+    console.log('Giữ nguyên dữ liệu mẫu');
   }
 }
 // ============================================================
@@ -564,7 +567,7 @@ function renderKpi() {
     '<div class="card">'+
       '<div class="lbl">Tỉ lệ khai thác</div>'+
       '<div class="vals"><span class="w29">'+pStr(k.tỉ_w29)+'</span><span class="arr">→</span><span class="w30">'+pStr(k.tỉ_w30)+'</span></div>'+
-      '<div class="sub '+wCls(k.wow_p)+'">'+wSym(k.wow_p)+' '+(k.wow_p*100).toFixed(2)+'pp so tuần trước</div>'+
+      '<div class="sub '+wCls(k.wow_p)+'">'+wSym(k.wow_p)+' '+(k.wow_p*100).toFixed(2)+'% so tuần trước</div>'+
     '</div>';
 }
 
