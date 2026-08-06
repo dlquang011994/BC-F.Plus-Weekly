@@ -425,7 +425,7 @@ const GITHUB_CONFIG = {
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     const weekNum = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    return 'Ty le khai thac F.Plus W' + String(weekNum).padStart(2, '0') + '.xlsx';
+    return 'Ty le khai thac F.Plus W' + String(weekNum).padStart(2, '0') + '.xlsb';
   }
 };
 
@@ -459,6 +459,12 @@ async function tryAutoLoad() {
   fileName = 'Ty le khai thac F.Plus ' + fileName + '.xlsx';
   
   const success = await loadFromGitHub(fileName);
+  if (!success) {
+    // Try .xlsb
+    const xlsbName = fileName.replace('.xlsx', '.xlsb');
+    const success2 = await loadFromGitHub(xlsbName);
+    if (success2) return;
+  }
   if (!success) {
     const altName = 'Bản sao của ' + fileName;
     await loadFromGitHub(altName);
