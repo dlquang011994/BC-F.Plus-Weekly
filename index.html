@@ -127,7 +127,7 @@ html, body {
 /* ── CHARTS ROW ── */
 .charts-row {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
   flex-shrink: 0;
 }
@@ -280,8 +280,8 @@ tr.tot td:first-child { text-align: left; }
     <div id="panTong" class="pane active">
       <div class="kpi" id="kpi"></div>
       <div class="charts-row">
-        <div class="ch" style="min-height: 300px;"><div class="ttl">Phiếu nhận theo tuần</div><canvas id="cNhan"></canvas></div>
-        
+        <div class="ch"><div class="ttl">Phiếu nhận theo tuần</div><canvas id="cNhan"></canvas></div>
+        <div class="ch"><div class="ttl">Tỉ lệ WoW theo vùng</div><canvas id="cTyLe"></canvas></div>
       </div>
 
       <div class="sec">
@@ -331,7 +331,7 @@ tr.tot td:first-child { text-align: left; }
 
     <!-- CHI TIẾT -->
     <div id="panChi" class="pane">
-      <div style="padding: 60px 20px; text-align: center; color: #999; background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.08);">
+      <div style="padding: 80px 20px; text-align: center; color: #999; background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin: 20px 0;">
         <p style="font-size: 16px; font-weight: 600;">Sheet Chi tiết</p>
         <p style="font-size: 13px; margin-top: 8px;">Đang trong quá trình phát triển</p>
       </div>
@@ -385,7 +385,8 @@ tr.tot td:first-child { text-align: left; }
             <tbody></tbody>
           </table>
         </div>
-      </div> -->  <!-- end panChi hidden --> 
+      </div>
+      -->
     </div>
 
     <div class="meta" id="meta"></div>
@@ -414,6 +415,8 @@ let D = FULL_DATA;
 const sortState = {}
 
 // ============================================================
+// AUTO-LOAD: Tự động tải file Excel theo tuần từ GitHub
+// ============================================================
 const GITHUB_CONFIG = {
   owner: 'dlquang011994',
   repo: 'BC-F.Plus-Weekly',
@@ -425,7 +428,7 @@ const GITHUB_CONFIG = {
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     const weekNum = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    return 'Ty le khai thac F.Plus W' + String(weekNum).padStart(2, '0') + '.xlsb';
+    return 'Ty le khai thac F.Plus W' + String(weekNum).padStart(2, '0') + '.xlsx';
   }
 };
 
@@ -440,15 +443,17 @@ async function loadFromGitHub(fileName) {
   const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${encodeURIComponent(fileName)}`;
   const statusEl = document.getElementById('st');
   if (!statusEl) return false;
+  statusEl.textContent = `Đang tải ${fileName}...`;
   try {
     const resp = await fetch(url);
-    if (!resp.ok) return false;
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const buffer = await resp.arrayBuffer();
     D = processWB(XLSX.read(buffer, {type:'array'}));
     statusEl.textContent = `✓ Tải tự động: ${fileName}`;
     refreshAll();
     return true;
   } catch(err) {
+    console.log('Lỗi:', err.message);
     return false;
   }
 }
@@ -460,26 +465,19 @@ async function tryAutoLoad() {
   
   const success = await loadFromGitHub(fileName);
   if (!success) {
-    // Try .xlsb
-    const xlsbName = fileName.replace('.xlsx', '.xlsb');
-    const success2 = await loadFromGitHub(xlsbName);
-    if (success2) return;
-  }
-  if (!success) {
     const altName = 'Bản sao của ' + fileName;
     await loadFromGitHub(altName);
   }
   if (!success) {
     const st = document.getElementById('st');
-    if (st) st.textContent = 'Chưa có file trên GitHub. Vui lòng upload thủ công.';
-    // Khi mở từ local, giữ nguyên FULL_DATA
-    console.log('Giữ nguyên dữ liệu mẫu');
+    if (st) st.textContent = 'Chưa có file. Vui lòng upload thủ công.';
   }
 }
 // ============================================================
 
 
 document.addEventListener('DOMContentLoaded', () => {
+  tryAutoLoad();
   tryAutoLoad();
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
