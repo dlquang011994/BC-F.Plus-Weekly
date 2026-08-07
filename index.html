@@ -3,509 +3,308 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>F.Plus — Dashboard Khai Thác</title>
+<title>F.Plus Weekly Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-@page { size: A4 portrait; margin: 12mm; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #333; font-size: 13px; }
 
-*{box-sizing:border-box;margin:0;padding:0}
-
-html, body {
-  background:#F5F3EF;
-  font-family:'Segoe UI',Calibri,Arial,sans-serif;
-  color:#1a1a1a;
-  font-size:12px;
-}
-
-.page-wrap {
-  display: flex;
-  justify-content: center;
-  padding: 16px;
-  min-height: 100vh;
-}
-
-.page {
-  background:#fff;
-  width: 297mm;
-  min-height: 210mm;
-  padding: 10mm 12mm 8mm;
-  box-shadow: 0 4px 24px rgba(0,0,0,.18);
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-/* ── HEADER ── */
-.hdr {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 10px;
-  border-bottom: 3px solid #1F3864;
-  margin-bottom: 10px;
-  flex-shrink: 0;
-}
-.hdr h1 {
-  font-size: 22px;
-  font-weight: 800;
-  color: #1F3864;
-  letter-spacing: -.5px;
-}
-.hdr-right { display: flex; align-items: center; gap: 10px; }
-.btn {
-  background: #E87534;
+header {
+  background: #1F3864;
   color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 5px;
-  font-weight: 700;
-  cursor: pointer;
-  font-size: 13px;
-}
-.btn:hover { background: #D4622A; }
-.btn-outline {
-  background: transparent;
-  color: #1F3864;
-  border: 2px solid #1F3864;
-  padding: 6px 14px;
-  border-radius: 5px;
-  font-weight: 700;
-  cursor: pointer;
-  font-size: 13px;
-}
-.btn-outline:hover { background: #1F3864; color: #fff; }
-.file-input { display: none; }
-.status { color: #888; font-size: 12px; display: flex; align-items: center; gap: 6px; }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
-.status-dot.online { background: #1E8C4C; }
-.status-dot.local { background: #E87534; }
-.status-dot.demo { background: #888; }
-
-/* ── DATA SOURCE INFO ── */
-.data-source {
-  background: #f4f9fd;
-  border: 1px solid #D6E4F0;
-  border-radius: 6px;
-  padding: 8px 12px;
-  margin-bottom: 10px;
+  padding: 10px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-.data-source .info { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666; }
-.data-source .badge {
-  background: #1F3864; color: #fff; padding: 3px 10px; border-radius: 12px;
-  font-size: 11px; font-weight: 700;
+header h1 { font-size: 18px; font-weight: 700; }
+header .header-right { display: flex; align-items: center; gap: 10px; }
+header button, header .btn {
+  background: #F4B942;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #1F3864;
 }
-.data-source a { color: #2E74B5; text-decoration: none; }
-.data-source a:hover { text-decoration: underline; }
+header button:hover, header .btn:hover { background: #e0a530; }
+header .btn-github {
+  background: #24292e;
+  color: #fff;
+}
+header .btn-github:hover { background: #444; }
 
-/* ── TABS ── */
+#ghStatus { font-size: 11px; color: #aaa; white-space: nowrap; }
+
+.topbar {
+  background: #fff;
+  border-bottom: 1px solid #dde3ec;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.topbar label { display: flex; align-items: center; gap: 5px; }
+.topbar select, .topbar input {
+  border: 1px solid #c1cdd9;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  background: #fff;
+}
+.topbar input { width: 200px; }
+
 .tabs {
   display: flex;
+  background: #fff;
   border-bottom: 2px solid #1F3864;
-  margin-bottom: 12px;
-  flex-shrink: 0;
+  padding: 0 18px;
 }
 .tab {
-  padding: 8px 22px;
+  padding: 8px 20px;
   cursor: pointer;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   color: #666;
-  font-size: 14px;
   border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
   user-select: none;
 }
-.tab:hover { color: #2E74B5; }
-.tab.active { color: #1F3864; border-bottom-color: #1F3864; }
+.tab:hover { color: #1F3864; }
+.tab.active { color: #1F3864; border-bottom-color: #F4B942; }
 
-.pane { display: none; flex-direction: column; gap: 10px; flex: 1; }
-.pane.active { display: flex; }
+.pane { display: none; padding: 14px 18px; }
+.pane.active { display: block; }
 
-/* ── KPI ── */
-.kpi {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  flex-shrink: 0;
-}
+.kpi { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
 .card {
   background: #fff;
   border-radius: 8px;
-  padding: 12px 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.1);
-  border-top: 4px solid #2E74B5;
+  padding: 14px 18px;
+  flex: 1;
+  min-width: 180px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
 }
-.card .lbl {
-  font-size: 10px;
-  color: #888;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  margin-bottom: 5px;
-}
-.card .vals {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 3px;
-}
-.card .w-prev { font-size: 15px; color: #888; font-weight: 600; }
-.card .w-curr { font-size: 26px; font-weight: 800; color: #1F3864; }
-.card .arr { color: #ccc; font-size: 13px; }
-.card .sub { font-size: 11px; color: #666; }
-.card .sub.up { color: #1E8C4C; font-weight: 600; }
-.card .sub.dn { color: #C00000; font-weight: 600; }
+.card .lbl { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+.card .vals { font-size: 26px; font-weight: 700; color: #1F3864; display: flex; align-items: baseline; gap: 6px; }
+.card .w29 { color: #888; font-size: 20px; font-weight: 400; }
+.card .w30 { color: #1F3864; }
+.card .arr { color: #ccc; font-size: 18px; font-weight: 400; }
+.card .sub { font-size: 11px; color: #888; margin-top: 4px; }
+.card .sub.up { color: #1E8C4C; }
+.card .sub.dn { color: #C00000; }
 
-/* ── CHARTS ROW ── */
-.charts-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  flex-shrink: 0;
-}
-.ch {
+.charts { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+.chart-card {
   background: #fff;
   border-radius: 8px;
-  padding: 10px 12px 8px;
+  padding: 14px;
   box-shadow: 0 1px 4px rgba(0,0,0,.08);
-  display: flex;
-  flex-direction: column;
-  min-height: 200px;
+  flex: 1;
+  min-width: 340px;
 }
-.ch .ttl {
-  font-size: 12px;
+.chart-card h3 { font-size: 13px; color: #1F3864; margin-bottom: 10px; font-weight: 700; }
+canvas { display: block; }
+
+.tbl-wrap {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.tbl-title {
+  font-size: 13px;
   font-weight: 700;
   color: #1F3864;
-  margin-bottom: 6px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 4px;
+  padding: 10px 14px 6px;
+  border-bottom: 1px solid #e8edf4;
 }
-.ch canvas {
-  flex: 1;
-  display: block;
-  width: 100% !important;
-}
-
-/* ── SECTIONS ── */
-.sec { display: flex; flex-direction: column; gap: 5px; flex: 1; }
-.sec-hd {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 4px;
-  border-bottom: 2px solid #D6E4F0;
-}
-.sec-hd .ttl {
-  font-size: 13px;
-  font-weight: 700;
-  color: #2E74B5;
-}
-.sec-hd .ed {
-  outline: none;
-  border-bottom: 2px dashed #ccc;
-  padding: 0 3px 1px;
-  font-size: 12px;
-  color: #2E74B5;
-  cursor: text;
-  min-width: 200px;
-}
-.sec-hd .ed:focus { border-bottom-color: #2E74B5; }
-
-/* ── FILTERS ── */
-.flt { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.flt-lbl { font-size: 12px; color: #888; font-weight: 600; }
-select, input[type=text] {
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 4px 8px;
-  font-size: 13px;
-}
-select:focus, input:focus { outline: none; border-color: #2E74B5; }
-
-/* ── TABLE ── */
-.tw {
-  background: #fff;
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
-  flex: 1;
-  overflow-x: auto;
-}
-.tw table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 600px;
-}
-th {
+.tbl-wrap table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tbl-wrap thead th {
   background: #1F3864;
   color: #fff;
   padding: 7px 10px;
-  text-align: center;
-  font-size: 11px;
-  font-weight: 700;
+  text-align: left;
+  font-weight: 600;
   white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  cursor: pointer;
   user-select: none;
 }
-th:first-child { text-align: left; }
-th.sortable { cursor: pointer; }
-th.sortable:hover { background: #2E74B5; }
-th .arr { display: inline-block; margin-left: 3px; opacity: .5; font-size: 9px; }
-th.sort-asc .arr, th.sort-desc .arr { opacity: 1; color: #E87534; }
-td {
-  padding: 6px 10px;
+.tbl-wrap thead th:first-child { cursor: default; }
+.tbl-wrap thead th:hover:not(:first-child) { background: #2a4f8a; }
+.tbl-wrap th .arr { font-size: 9px; margin-left: 3px; }
+.tbl-wrap th.sort-asc { background: #2a4f8a; }
+.tbl-wrap th.sort-desc { background: #2a4f8a; }
+.tbl-wrap tbody td { padding: 6px 10px; border-bottom: 1px solid #eef1f5; color: #444; }
+.tbl-wrap tbody tr:hover td { background: #f5f8ff; }
+.tbl-wrap tbody tr.tot td { background: #f0f4f8; font-weight: 700; color: #1F3864; border-top: 2px solid #c1cdd9; }
+.tbl-wrap .t-pct { font-weight: 600; color: #1F3864; }
+.tbl-wrap .t-pos { color: #1E8C4C; font-weight: 600; }
+.tbl-wrap .t-neg { color: #C00000; font-weight: 600; }
+.tbl-wrap .t-zero { color: #bbb; }
+.tbl-wrap .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+footer {
   text-align: center;
-  font-size: 12px;
-  border-bottom: 1px solid #edf2f7;
+  padding: 10px;
+  font-size: 11px;
+  color: #aaa;
+  border-top: 1px solid #e8edf4;
 }
-td:first-child { text-align: left; font-weight: 500; }
-tr:nth-child(even) td { background: #f4f9fd; }
-tr:last-child td { border-bottom: none; }
-tr.tot td { background: #1F3864 !important; color: #fff !important; font-weight: 700; }
-tr.tot td:first-child { text-align: left; }
-.t-pct { color: #2E74B5; font-weight: 600; }
-.t-pos { color: #1E8C4C; font-weight: 600; }
-.t-neg { color: #C00000; font-weight: 600; }
-.t-zero { color: #bbb; }
-
-.meta { font-size: 11px; color: #999; text-align: center; padding: 6px 0 4px; flex-shrink: 0; }
-
-/* ── Ratio color badges ── */
-.t-pct.ratio.ratio-green  { color: #375623; background: #C6EFCE; border-radius: 4px; padding: 1px 5px; display: inline-block; }
-.t-pct.ratio.ratio-yellow { color: #7D6608; background: #FFF3CF; border-radius: 4px; padding: 1px 5px; display: inline-block; }
-.t-pct.ratio.ratio-red    { color: #9C0006; background: #FFC7CE; border-radius: 4px; padding: 1px 5px; display: inline-block; }
-
-/* ── Sheet Chi tiết: grid chia đều 2 bảng ── */
-.paneGrid {
-  display: grid !important;
-  grid-template-rows: auto 1fr;
-  gap: 6px;
-  flex: 1;
-  overflow: hidden;
-}
-.paneGrid > .sec { flex: unset !important; overflow: hidden; }
-.paneGrid > .sec > .tw { flex: unset !important; overflow: auto; }
-
-/* ── LOADING ── */
-.loading-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(255,255,255,0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  flex-direction: column;
-  gap: 16px;
-}
-.loading-overlay.hidden { display: none; }
-.loading-spinner {
-  width: 40px; height: 40px;
-  border: 4px solid #D6E4F0;
-  border-top-color: #1F3864;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { color: #666; font-size: 14px; }
-
-/* ── ERROR ── */
-.error-box {
-  background: #FFC7CE;
-  border: 1px solid #9C0006;
-  border-radius: 6px;
-  padding: 16px;
-  margin: 20px;
-  color: #9C0006;
-}
-.error-box h3 { margin-bottom: 8px; }
-.error-box ul { margin: 0; padding-left: 20px; }
-.error-box li { margin: 4px 0; }
 </style>
 </head>
 <body>
 
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="loading-spinner"></div>
-  <div class="loading-text" id="loadingText">Đang tải dữ liệu...</div>
+<header>
+  <h1>F.Plus — Báo Cáo Khai Thác Hàng Tuần</h1>
+  <div class="header-right">
+    <span id="ghStatus">Đang kết nối GitHub…</span>
+    <label style="font-size:11px;color:#ccc;cursor:pointer;" title="Upload file Excel cục bộ">
+      📂 Tải file cục bộ
+      <input type="file" id="fi" accept=".xlsb,.xlsx,.xls" style="display:none;">
+    </label>
+  </div>
+</header>
+
+<div class="topbar">
+  <strong>Filters:</strong>
+  <label>Vùng <select id="fVung"><option value="">Tất cả</option></select></label>
+  <label>Vùng (ASM) <select id="fAV"><option value="">Tất cả</option></select></label>
+  <label>ASM <select id="fAA"><option value="">Tất cả</option></select></label>
+  <label>🔍 Shop <input type="text" id="fAS" placeholder="Tìm shop…"></label>
+  <span id="st" style="margin-left:auto;font-size:11px;color:#888;"></span>
 </div>
 
-<div class="page-wrap">
-  <div class="page">
+<div class="tabs">
+  <div class="tab active" data-p="pnOverview">Tổng quan</div>
+  <div class="tab" data-p="pnDetail">Chi tiết</div>
+</div>
 
-    <div class="hdr">
-      <h1>F.PLUS — Dashboard Khai Thác</h1>
-      <div class="hdr-right">
-        <label class="btn" for="fi">+ Tải file Excel cục bộ</label>
-        <input type="file" id="fi" class="file-input" accept=".xlsx,.xls,.xlsb">
-        <span class="status" id="st">
-          <span class="status-dot" id="statusDot"></span>
-          <span id="statusText">Đang khởi tạo...</span>
-        </span>
-      </div>
+<div id="pnOverview" class="pane active">
+  <div id="kpi" class="kpi"></div>
+  <div class="charts">
+    <div class="chart-card">
+      <h3>Phiếu nhận theo tuần</h3>
+      <canvas id="cNhan"></canvas>
     </div>
-
-    <div class="data-source">
-      <div class="info">
-        <span>📊 Nguồn dữ liệu:</span>
-        <span class="badge" id="dataSourceBadge">--</span>
-        <span id="dataSourceDetail"></span>
-      </div>
-      <div>
-        <a href="https://github.com/dlquang011994/BC-F.Plus-Weekly" target="_blank" style="font-size:11px;">📂 Xem trên GitHub</a>
-      </div>
+    <div class="chart-card">
+      <h3>Tỉ lệ WoW theo vùng</h3>
+      <canvas id="cTyLe"></canvas>
     </div>
-
-    <div class="tabs">
-      <div class="tab active" data-p="panTong">1. Tổng quan</div>
-      <div class="tab" data-p="panChi">2. Chi tiết</div>
-    </div>
-
-    <!-- TỔNG QUAN -->
-    <div id="panTong" class="pane active">
-      <div class="kpi" id="kpi"></div>
-      <div class="charts-row">
-        <div class="ch"><div class="ttl">Phiếu nhận theo tuần</div><canvas id="cNhan"></canvas></div>
-        <div class="ch"><div class="ttl">Tỉ lệ WoW theo vùng</div><canvas id="cTyLe"></canvas></div>
-      </div>
-
-      <div class="sec">
-        <div class="sec-hd">
-          <span class="ttl">Phiếu nhận 4 tuần gần nhất</span>
-          <div class="flt">
-            <span class="flt-lbl">Lọc Vùng:</span>
-            <select id="fVung"><option value="">Tất cả</option></select>
-          </div>
-        </div>
-        <div class="tw">
-          <table id="tblMain">
-            <thead><tr>
-              <th class="sortable" data-col="vùng" data-table="tblMain">Vùng<span class="arr"></span></th>
-              <th class="sortable" data-col="w-prev3" data-table="tblMain" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="w-prev2" data-table="tblMain" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="w-prev1" data-table="tblMain" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="w-curr" data-table="tblMain" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="tổng" data-table="tblMain" data-type="n">Tổng<span class="arr"></span></th>
-              <th class="sortable" data-col="wow_n" data-table="tblMain" data-type="n">WoW Nhận<span class="arr"></span></th>
-              <th class="sortable" data-col="wow_p" data-table="tblMain" data-type="n">WoW Tỉ lệ<span class="arr"></span></th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="sec">
-        <div class="sec-hd">
-          <span class="ttl">Luỹ kế tỉ lệ phiếu nhận theo tháng</span>
-        </div>
-        <div class="tw">
-          <table id="tblLuy">
-            <thead><tr>
-              <th class="sortable" data-col="vùng" data-table="tblLuy">Vùng<span class="arr"></span></th>
-              <th class="sortable" data-col="th3" data-table="tblLuy" data-type="n">Th.3<span class="arr"></span></th>
-              <th class="sortable" data-col="th4" data-table="tblLuy" data-type="n">Th.4<span class="arr"></span></th>
-              <th class="sortable" data-col="th5" data-table="tblLuy" data-type="n">Th.5<span class="arr"></span></th>
-              <th class="sortable" data-col="th6" data-table="tblLuy" data-type="n">Th.6<span class="arr"></span></th>
-              <th class="sortable" data-col="th7" data-table="tblLuy" data-type="n">Th.7<span class="arr"></span></th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- CHI TIẾT -->
-    <div id="panChi" class="pane paneGrid">
-      <div class="sec">
-        <div class="sec-hd">
-          <span class="ttl">Số phiếu nhận vào 4 tuần gần nhất theo vùng</span>
-        </div>
-        <div class="tw">
-          <table id="tblVuong">
-            <thead><tr>
-              <th class="sortable" data-col="vùng" data-table="tblVuong">Vùng<span class="arr"></span></th>
-              <th class="sortable" data-col="w-prev3" data-table="tblVuong" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="w-prev2" data-table="tblVuong" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="w-prev1" data-table="tblVuong" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="w-curr" data-table="tblVuong" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="tổng" data-table="tblVuong" data-type="n">Tổng<span class="arr"></span></th>
-              <th class="sortable" data-col="bán_w-curr" data-table="tblVuong" data-type="n">Bán W<span class="arr"></span></th>
-              <th class="sortable" data-col="tỉ_lệ" data-table="tblVuong" data-type="n">Tỉ lệ<span class="arr"></span></th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="sec" style="flex: 2">
-        <div class="sec-hd">
-          <span class="ttl">Chi tiết phiếu nhận 4 tuần gần nhất theo shop</span>
-          <div class="flt">
-            <span class="flt-lbl">Vùng:</span>
-            <select id="fAV"><option value="">Tất cả</option></select>
-            <span class="flt-lbl">ASM:</span>
-            <select id="fAA"><option value="">Tất cả</option></select>
-            <span class="flt-lbl">Shop:</span>
-            <input type="text" id="fAS" placeholder="Tìm shop...">
-          </div>
-        </div>
-        <div class="tw" style="flex:1; overflow: auto;">
-          <table id="tblAsm">
-            <thead><tr>
-              <th class="sortable" data-col="asm" data-table="tblAsm">ASM<span class="arr"></span></th>
-              <th class="sortable" data-col="vùng" data-table="tblAsm">Vùng<span class="arr"></span></th>
-              <th class="sortable" data-col="shop" data-table="tblAsm">Shop<span class="arr"></span></th>
-              <th class="sortable" data-col="w-prev3" data-table="tblAsm" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="w-prev2" data-table="tblAsm" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="w-prev1" data-table="tblAsm" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="w-curr" data-table="tblAsm" data-type="n">W<span class="arr"></span></th>
-              <th class="sortable" data-col="bán_w-curr" data-table="tblAsm" data-type="n">Bán W<span class="arr"></span></th>
-              <th class="sortable" data-col="tỉ_lệ" data-table="tblAsm" data-type="n">Tỉ lệ<span class="arr"></span></th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="meta" id="meta"></div>
-
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-title">Phiếu nhận theo vùng</div>
+    <table id="tblMain">
+      <thead>
+        <tr>
+          <th data-col="vùng">Vùng <span class="arr"></span></th>
+          <th class="num" data-col="w27" data-type="n" data-tbl="tblMain">W27 <span class="arr"></span></th>
+          <th class="num" data-col="w28" data-type="n" data-tbl="tblMain">W28 <span class="arr"></span></th>
+          <th class="num" data-col="w29" data-type="n" data-tbl="tblMain">W29 <span class="arr"></span></th>
+          <th class="num" data-col="w30" data-type="n" data-tbl="tblMain">W30 <span class="arr"></span></th>
+          <th class="num" data-col="tổng" data-type="n" data-tbl="tblMain">Tổng <span class="arr"></span></th>
+          <th class="num" data-col="wow_n" data-type="n" data-tbl="tblMain">WoW <span class="arr"></span></th>
+          <th class="num" data-col="wow_p" data-type="n" data-tbl="tblMain">% WoW <span class="arr"></span></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-title">Lũy kế theo tháng</div>
+    <table id="tblLuy">
+      <thead>
+        <tr>
+          <th>Vùng</th>
+          <th class="num">Th3</th>
+          <th class="num">Th4</th>
+          <th class="num">Th5</th>
+          <th class="num">Th6</th>
+          <th class="num">Th7</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 </div>
 
+<div id="pnDetail" class="pane">
+  <div class="tbl-wrap">
+    <div class="tbl-title">Phiếu nhận theo vùng (có Volume bán)</div>
+    <table id="tblVuong">
+      <thead>
+        <tr>
+          <th>Vùng</th>
+          <th class="num">W27</th>
+          <th class="num">W28</th>
+          <th class="num">W29</th>
+          <th class="num">W30</th>
+          <th class="num">Tổng</th>
+          <th class="num">Bán W30</th>
+          <th class="num">Tỉ lệ</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-title">Chi tiết Shop / ASM</div>
+    <table id="tblAsm">
+      <thead>
+        <tr>
+          <th>ASM</th>
+          <th>Vùng</th>
+          <th>Shop</th>
+          <th class="num">W27</th>
+          <th class="num">W28</th>
+          <th class="num">W29</th>
+          <th class="num">W30</th>
+          <th class="num">Bán W30</th>
+          <th class="num">Tỉ lệ</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<footer id="meta">Dữ liệu F.Plus</footer>
+
 <script>
-// ═══════════════════════════════════════════════════════════════════
-// CẤU HÌNH GITHUB
-// ═══════════════════════════════════════════════════════════════════
+// ============================================================
+// GITHUB CONFIGURATION
+// ============================================================
 const GITHUB_CONFIG = {
-  // Thay đổi URL này nếu repo của bạn khác
   owner: 'dlquang011994',
   repo: 'BC-F.Plus-Weekly',
-  branch: 'main', // hoặc 'master' tùy repo
-  dataFolder: ''  // Thư mục chứa data, để trống nếu ở root
+  branch: 'main',
+  latestJsonPath: 'latest.json',
+  dataFolder: '.'
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// DỮ LIỆU MẪU (Fallback khi không có file)
-// ═══════════════════════════════════════════════════════════════════
-const SAMPLE_DATA = {
-  kpi: {"n_prev": 410, "n_curr": 448, "b_prev": 5047, "b_curr": 4863, "tỉ_prev": 0.081236, "tỉ_curr": 0.092124, "wow_n": 38, "wow_p": 0.010888},
+// ============================================================
+// SAMPLE DATA
+// ============================================================
+const FULL_DATA = {
+  kpi: {"n_w29": 410, "n_w30": 448, "b_w29": 5047, "b_w30": 4863, "tỉ_w29": 0.081236, "tỉ_w30": 0.092124, "wow_n": 38, "wow_p": 0.010888},
   main: [
-    {"vùng": "Hà Nội", "w-prev3": 54, "w-prev2": 55, "w-prev1": 48, "w-curr": 47, "tổng": 204, "wow_n": -1, "wow_p": 0.000308},
-    {"vùng": "Hồ Chí Minh", "w-prev3": 94, "w-prev2": 100, "w-prev1": 115, "w-curr": 112, "tổng": 421, "wow_n": -3, "wow_p": -0.001233},
-    {"vùng": "Miền Bắc 1", "w-prev3": 71, "w-prev2": 58, "w-prev1": 61, "w-curr": 64, "tổng": 254, "wow_n": 3, "wow_p": 0.045267},
-    {"vùng": "Miền Bắc 2", "w-prev3": 45, "w-prev2": 53, "w-prev1": 56, "w-curr": 60, "tổng": 214, "wow_n": 4, "wow_p": -0.017167},
-    {"vùng": "Miền Đông", "w-prev3": 0, "w-prev2": 57, "w-prev1": 52, "w-curr": 68, "tổng": 177, "wow_n": 16, "wow_p": 0.066835},
-    {"vùng": "Miền Tây", "w-prev3": 45, "w-prev2": 63, "w-prev1": 49, "w-curr": 52, "tổng": 209, "wow_n": 3, "wow_p": 0.024766},
-    {"vùng": "Miền Trung", "w-prev3": 23, "w-prev2": 27, "w-prev1": 29, "w-curr": 45, "tổng": 124, "wow_n": 16, "wow_p": 0.024925}
+    {"vùng": "Hà Nội", "w27": 54, "w28": 55, "w29": 48, "w30": 47, "tổng": 204, "wow_n": -1, "wow_p": 0.000308},
+    {"vùng": "Hồ Chí Minh", "w27": 94, "w28": 100, "w29": 115, "w30": 112, "tổng": 421, "wow_n": -3, "wow_p": -0.001233},
+    {"vùng": "Miền Bắc 1", "w27": 71, "w28": 58, "w29": 61, "w30": 64, "tổng": 254, "wow_n": 3, "wow_p": 0.045267},
+    {"vùng": "Miền Bắc 2", "w27": 45, "w28": 53, "w29": 56, "w30": 60, "tổng": 214, "wow_n": 4, "wow_p": -0.017167},
+    {"vùng": "Miền Đông", "w27": 0, "w28": 57, "w29": 52, "w30": 68, "tổng": 177, "wow_n": 16, "wow_p": 0.066835},
+    {"vùng": "Miền Tây", "w27": 45, "w28": 63, "w29": 49, "w30": 52, "tổng": 209, "wow_n": 3, "wow_p": 0.024766},
+    {"vùng": "Miền Trung", "w27": 23, "w28": 27, "w29": 29, "w30": 45, "tổng": 124, "wow_n": 16, "wow_p": 0.024925}
   ],
   luyke: {
-    rows: [
+    "rows": [
       {"vùng": "Hà Nội", "th3": 0.020229, "th4": 0.025976, "th5": 0.019372, "th6": 0.023543, "th7": 0.025485},
       {"vùng": "Hồ Chí Minh", "th3": 0.060295, "th4": 0.054312, "th5": 0.045999, "th6": 0.068938, "th7": 0.080638},
       {"vùng": "Miền Bắc 1", "th3": 0.181256, "th4": 0.241481, "th5": 0.21802, "th6": 0.252546, "th7": 0.275441},
@@ -514,386 +313,116 @@ const SAMPLE_DATA = {
       {"vùng": "Miền Tây", "th3": 0.181445, "th4": 0.323711, "th5": 0.238245, "th6": 0.319182, "th7": 0.365854},
       {"vùng": "Miền Trung", "th3": 0.026591, "th4": 0.037197, "th5": 0.029335, "th6": 0.040622, "th7": 0.04698}
     ],
-    tot: {"vùng": "Tổng", "th3": 0.05489, "th4": 0.06904, "th5": 0.053255, "th6": 0.070764, "th7": 0.084956}
+    "tot": {"vùng": "Tổng", "th3": 0.05489, "th4": 0.06904, "th5": 0.053255, "th6": 0.070764, "th7": 0.084956}
   },
   vuong: {
-    rows: [
-      {"vùng": "Hà Nội", "w-prev3": 54, "w-prev2": 55, "w-prev1": 48, "w-curr": 47, "tổng": 204, "bán_w-curr": 1925, "tỉ_lệ": 0.024416},
-      {"vùng": "Hồ Chí Minh", "w-prev3": 94, "w-prev2": 100, "w-prev1": 115, "w-curr": 112, "tổng": 421, "bán_w-curr": 1290, "tỉ_lệ": 0.086822},
-      {"vùng": "Miền Bắc 1", "w-prev3": 71, "w-prev2": 58, "w-prev1": 61, "w-curr": 64, "tổng": 254, "bán_w-curr": 216, "tỉ_lệ": 0.296296},
-      {"vùng": "Miền Bắc 2", "w-prev3": 45, "w-prev2": 53, "w-prev1": 56, "w-curr": 60, "tổng": 214, "bán_w-curr": 221, "tỉ_lệ": 0.271493},
-      {"vùng": "Miền Đông", "w-prev3": 0, "w-prev2": 57, "w-prev1": 52, "w-curr": 68, "tổng": 177, "bán_w-curr": 367, "tỉ_lệ": 0.185286},
-      {"vùng": "Miền Tây", "w-prev3": 45, "w-prev2": 63, "w-prev1": 49, "w-curr": 52, "tổng": 209, "bán_w-curr": 158, "tỉ_lệ": 0.329114},
-      {"vùng": "Miền Trung", "w-prev3": 23, "w-prev2": 27, "w-prev1": 29, "w-curr": 45, "tổng": 124, "bán_w-curr": 686, "tỉ_lệ": 0.065598}
+    "rows": [
+      {"vùng": "Hà Nội", "w27": 54, "w28": 55, "w29": 48, "w30": 47, "tổng": 204, "bán_w30": 1925, "tỉ_lệ": 0.024416},
+      {"vùng": "Hồ Chí Minh", "w27": 94, "w28": 100, "w29": 115, "w30": 112, "tổng": 421, "bán_w30": 1290, "tỉ_lệ": 0.086822},
+      {"vùng": "Miền Bắc 1", "w27": 71, "w28": 58, "w29": 61, "w30": 64, "tổng": 254, "bán_w30": 216, "tỉ_lệ": 0.296296},
+      {"vùng": "Miền Bắc 2", "w27": 45, "w28": 53, "w29": 56, "w30": 60, "tổng": 214, "bán_w30": 221, "tỉ_lệ": 0.271493},
+      {"vùng": "Miền Đông", "w27": 0, "w28": 57, "w29": 52, "w30": 68, "tổng": 177, "bán_w30": 367, "tỉ_lệ": 0.185286},
+      {"vùng": "Miền Tây", "w27": 45, "w28": 63, "w29": 49, "w30": 52, "tổng": 209, "bán_w30": 158, "tỉ_lệ": 0.329114},
+      {"vùng": "Miền Trung", "w27": 23, "w28": 27, "w29": 29, "w30": 45, "tổng": 124, "bán_w30": 686, "tỉ_lệ": 0.065598}
     ],
-    tot: {"vùng": "Tổng", "w-prev3": 332, "w-prev2": 413, "w-prev1": 410, "w-curr": 448, "tổng": 1603, "bán_w-curr": 4863, "tỉ_lệ": 0.092124}
+    "rows2": [{"vùng": "Tổng", "w27": 332, "w28": 413, "w29": 410, "w30": 448, "tổng": 1603, "bán_w30": 4863, "tỉ_lệ": 0.092124}]
   },
   asm: [],
-  vungList: ["Hà Nội", "Hồ Chí Minh", "Miền Bắc 1", "Miền Bắc 2", "Miền Đông", "Miền Tây", "Miền Trung"],
-  weekLabels: { prev3: "W27", prev2: "W28", prev1: "W29", curr: "W30" },
-  source: 'demo'
+  vungList: ["Hà Nội", "Hồ Chí Minh", "Miền Bắc 1", "Miền Bắc 2", "Miền Đông", "Miền Tây", "Miền Trung"]
 };
 
-// ═══════════════════════════════════════════════════════════════════
-// BIẾN TOÀN CỤC
-// ═══════════════════════════════════════════════════════════════════
-let D = SAMPLE_DATA;
+// ============================================================
+// UTILITY FUNCTIONS
+// ============================================================
+const pct = (n, b) => b ? n / b : 0;
+const pStr = v => (v == null || isNaN(v)) ? '—' : (v * 100).toFixed(2) + '%';
+const fmtN = v => (v == null || isNaN(v)) ? '—' : v.toLocaleString('vi-VN');
+const wCls = v => v > 0 ? 'up' : v < 0 ? 'dn' : '';
+const wSym = v => v > 0 ? '▲' : v < 0 ? '▼ ' : '';
+const escHtml = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+let D = Object.assign({}, FULL_DATA);
 const sortState = {};
 
-// ═══════════════════════════════════════════════════════════════════
-// KHỞI TẠO
-// ═══════════════════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', async () => {
-  showLoading('Đang khởi tạo...');
+// ============================================================
+// GITHUB FETCH
+// ============================================================
+function ghRawUrl(owner, repo, branch, path) {
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+}
 
-  // 1. Thử fetch latest.json từ GitHub
-  const githubSuccess = await tryFetchFromGithub();
-
-  // 2. Nếu không được, dùng dữ liệu mẫu
-  if (!githubSuccess) {
-    console.log('Sử dụng dữ liệu mẫu (demo mode)');
-    D = SAMPLE_DATA;
-    updateStatus('demo', 'Dữ liệu mẫu (Demo)');
-  }
-
-  // 3. Setup event listeners
-  setupEventListeners();
-
-  // 4. Render dashboard
-  hideLoading();
-  refreshAll();
-  updateWeekHeaders();
-});
-
-// ═══════════════════════════════════════════════════════════════════
-// FETCH TỪ GITHUB
-// ═══════════════════════════════════════════════════════════════════
-async function tryFetchFromGithub() {
-  const baseUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}`;
-  const folder = GITHUB_CONFIG.dataFolder ? GITHUB_CONFIG.dataFolder + '/' : '';
-  const latestUrl = `${baseUrl}/${folder}latest.json`;
+async function fetchFromGitHub() {
+  const { owner, repo, branch, latestJsonPath, dataFolder } = GITHUB_CONFIG;
+  const statusEl = document.getElementById('ghStatus');
 
   try {
-    showLoading('Đang tải latest.json...');
+    statusEl.textContent = '📡 Đang tải latest.json…';
+    const jResp = await fetch(ghRawUrl(owner, repo, branch, latestJsonPath) + '?t=' + Date.now());
+    if (!jResp.ok) throw new Error(`latest.json không tìm thấy (HTTP ${jResp.status}). Kiểm tra GITHUB_CONFIG hoặc file latest.json trên GitHub.`);
 
-    // Bước 1: Đọc latest.json để biết file nào là mới nhất
-    const response = await fetch(latestUrl);
+    const config = await jResp.json();
+    const latestWeek = config.latest || '?';
+    const dataFile = config.file;
 
-    if (!response.ok) {
-      throw new Error('Không tìm thấy latest.json');
-    }
+    if (!dataFile) throw new Error('latest.json thiếu trường "file".');
 
-    const latestInfo = await response.json();
+    const dataPath = dataFolder ? `${dataFolder}/${dataFile}` : dataFile;
+    const dataUrl = ghRawUrl(owner, repo, branch, dataPath) + '?t=' + Date.now();
 
-    // Bước 2: Fetch file data mới nhất
-    showLoading(`Đang tải ${latestInfo.file}...`);
-    const dataUrl = `${baseUrl}/${folder}${latestInfo.file}`;
-    const dataResponse = await fetch(dataUrl);
+    statusEl.textContent = `📡 Đang tải ${dataFile}…`;
+    const dResp = await fetch(dataUrl);
+    if (!dResp.ok) throw new Error(`File dữ liệu không tìm thấy: ${dataFile} (HTTP ${dResp.status})`);
 
-    if (!dataResponse.ok) {
-      throw new Error('Không tìm thấy file dữ liệu');
-    }
-
-    // XLSB cần đọc binary
-    const buffer = await dataResponse.arrayBuffer();
-    const wb = XLSX.read(buffer, { type: 'array' });
-
-    // Xử lý data
+    const buf = await dResp.arrayBuffer();
+    statusEl.textContent = `⚙️ Đang xử lý dữ liệu ${latestWeek}…`;
+    const wb = XLSX.read(buf, { type: 'array' });
     D = processWB(wb);
-    D.source = 'github';
-    D.fileName = latestInfo.file;
-    D.latestWeek = latestInfo.latest;
 
-    updateStatus('online', `GitHub: ${latestInfo.file}`);
-    hideLoading();
-    return true;
+    statusEl.textContent = `✅ Đã tải: ${dataFile}`;
+    document.getElementById('st').textContent = `${dataFile} — Tuần ${latestWeek}`;
+    refreshAll();
 
   } catch (err) {
-    console.log('Lỗi fetch từ GitHub:', err.message);
-    hideLoading();
-    return false;
+    console.error('Lỗi fetch GitHub:', err);
+    statusEl.textContent = '⚠️ Lỗi kết nối — dùng dữ liệu mẫu';
+    document.getElementById('st').textContent = 'Lỗi: ' + err.message + ' (dùng dữ liệu mẫu)';
+    D = Object.assign({}, FULL_DATA);
+    refreshAll();
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// XỬ LÝ FILE EXCEL
-// ═══════════════════════════════════════════════════════════════════
-function processWB(wb) {
-  const sh = {};
-  for (const n of wb.SheetNames) sh[n] = XLSX.utils.sheet_to_json(wb.Sheets[n], { defval: '' });
-
-  const VU = ['Hà Nội', 'Hồ Chí Minh', 'Miền Bắc 1', 'Miền Bắc 2', 'Miền Đông', 'Miền Tây', 'Miền Trung'];
-  const MO = [3, 4, 5, 6, 7];
-
-  // Tìm các tuần gần nhất (4 tuần)
-  const weekMap = findRecentWeeks(sh);
-  const wLabels = weekMap.labels;
-
-  const d1 = sh['Volume phiếu nhận'] || [];
-  const d2 = (sh['Volume bán'] || []).filter(r => r['Shop vệ tinh'] === 'Shop vệ tinh');
-  const dA = (sh['SL shop nhận máy F.Plus vùng'] || []).filter(r => r['Shop']);
-
-  const n_vw = {}, n_vm = {}, b_vw = {}, b_vm = {};
-  for (const v of VU) { n_vw[v] = {}; n_vm[v] = {}; b_vw[v] = {}; b_vm[v] = {}; }
-
-  for (const r of d1) {
-    const v = String(r['Vùng kinh doanh shop'] || '').trim();
-    const w = String(r['Tuần'] || '').trim();
-    const m = Number(r['Tháng']);
-    if (!VU.includes(v)) continue;
-    n_vw[v][w] = (n_vw[v][w] || 0) + 1;
-    if (!isNaN(m)) n_vm[v][m] = (n_vm[v][m] || 0) + 1;
-  }
-
-  for (const r of d2) {
-    const v = String(r['Vùng kinh doạnh'] || '').trim();
-    const w = String(r['Tuần'] || '').trim();
-    const m = Number(r['Tháng']);
-    if (!VU.includes(v)) continue;
-    b_vw[v][w] = (b_vw[v][w] || 0) + 1;
-    if (!isNaN(m)) b_vm[v][m] = (b_vm[v][m] || 0) + 1;
-  }
-
-  const nPrev3 = VU.reduce((s, v) => s + (n_vw[v][wLabels.prev3] || 0), 0);
-  const nPrev2 = VU.reduce((s, v) => s + (n_vw[v][wLabels.prev2] || 0), 0);
-  const nPrev1 = VU.reduce((s, v) => s + (n_vw[v][wLabels.prev1] || 0), 0);
-  const nCurr = VU.reduce((s, v) => s + (n_vw[v][wLabels.curr] || 0), 0);
-
-  const bPrev1 = VU.reduce((s, v) => s + (b_vw[v][wLabels.prev1] || 0), 0);
-  const bCurr = VU.reduce((s, v) => s + (b_vw[v][wLabels.curr] || 0), 0);
-
-  const wow_n = nCurr - nPrev1;
-  const wow_p = pct(nCurr, bCurr) - pct(nPrev1, bPrev1);
-
-  const main = VU.map(v => {
-    const wp3 = n_vw[v][wLabels.prev3] || 0;
-    const wp2 = n_vw[v][wLabels.prev2] || 0;
-    const wp1 = n_vw[v][wLabels.prev1] || 0;
-    const wc = n_vw[v][wLabels.curr] || 0;
-    return {
-      vùng: v,
-      'w-prev3': wp3, 'w-prev2': wp2, 'w-prev1': wp1, 'w-curr': wc,
-      tổng: wp3 + wp2 + wp1 + wc,
-      wow_n: wc - wp1,
-      wow_p: pct(wc, b_vw[v][wLabels.curr] || 0) - pct(wp1, b_vw[v][wLabels.prev1] || 0)
-    };
-  });
-
-  const lk_rows = VU.map(v => {
-    const row = { vùng: v };
-    for (const m of MO) row['th' + m] = pct(n_vm[v][m] || 0, b_vm[v][m] || 0);
-    return row;
-  });
-
-  const lk_tot = { vùng: 'Tổng' };
-  for (const m of MO) {
-    lk_tot['th' + m] = pct(
-      VU.reduce((s, v) => s + (n_vm[v][m] || 0), 0),
-      VU.reduce((s, v) => s + (b_vm[v][m] || 0), 0)
-    );
-  }
-
-  const vuong = VU.map(v => {
-    const wp3 = n_vw[v][wLabels.prev3] || 0;
-    const wp2 = n_vw[v][wLabels.prev2] || 0;
-    const wp1 = n_vw[v][wLabels.prev1] || 0;
-    const wc = n_vw[v][wLabels.curr] || 0;
-    const bc = b_vw[v][wLabels.curr] || 0;
-    return {
-      vùng: v,
-      'w-prev3': wp3, 'w-prev2': wp2, 'w-prev1': wp1, 'w-curr': wc,
-      tổng: wp3 + wp2 + wp1 + wc,
-      'bán_w-curr': bc,
-      tỉ_lệ: pct(wc, bc)
-    };
-  });
-
-  const vuong_tot = {
-    vùng: 'Tổng',
-    'w-prev3': nPrev3, 'w-prev2': nPrev2, 'w-prev1': nPrev1, 'w-curr': nCurr,
-    tổng: nPrev3 + nPrev2 + nPrev1 + nCurr,
-    'bán_w-curr': bCurr,
-    tỉ_lệ: pct(nCurr, bCurr)
+// ============================================================
+// LOCAL FILE UPLOAD
+// ============================================================
+document.getElementById('fi').addEventListener('change', e => {
+  if (!e.target.files[0]) return;
+  const f = e.target.files[0];
+  document.getElementById('st').textContent = 'Đang xử lý…';
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const wb = XLSX.read(ev.target.result, { type: 'array' });
+      D = processWB(wb);
+      document.getElementById('st').textContent = '✓ ' + f.name;
+      document.getElementById('ghStatus').textContent = '📂 Dữ liệu cục bộ';
+      refreshAll();
+    } catch (err) { alert('Lỗi: ' + err.message); }
   };
+  r.readAsArrayBuffer(f);
+});
 
-  // ASM data
-  const sn = {};
-  for (const r of d1) {
-    const shop = String(r['Cửa hàng'] || '').trim();
-    const w = String(r['Tuần'] || '').trim();
-    if (!shop) continue;
-    if (!sn[shop]) sn[shop] = {};
-    sn[shop][w] = (sn[shop][w] || 0) + 1;
-  }
-
-  const sb = {};
-  for (const r of d2) {
-    const shop = String(r['Shop Name'] || '').trim();
-    const w = String(r['Tuần'] || '').trim();
-    if (!shop) continue;
-    if (!sb[shop]) sb[shop] = {};
-    sb[shop][w] = (sb[shop][w] || 0) + 1;
-  }
-
-  const asm = dA.map(r => {
-    const shop = String(r['Shop'] || '').trim();
-    const wp3 = sn[shop]?.[wLabels.prev3] || 0;
-    const wp2 = sn[shop]?.[wLabels.prev2] || 0;
-    const wp1 = sn[shop]?.[wLabels.prev1] || 0;
-    const wc = sn[shop]?.[wLabels.curr] || 0;
-    const bc = sb[shop]?.[wLabels.curr] || 0;
-    return {
-      asm: String(r['ASM'] || '').trim(),
-      vùng: String(r['Vùng'] || '').trim(),
-      shop,
-      'w-prev3': wp3, 'w-prev2': wp2, 'w-prev1': wp1, 'w-curr': wc,
-      'bán_w-curr': bc,
-      tỉ_lệ: pct(wc, bc)
-    };
-  })
-  .filter(r => r.vùng && VU.includes(r.vùng))
-  .sort((a, b) => (a.asm || '').localeCompare(b.asm || '') || (a.vùng || '').localeCompare(b.vùng || '') || (a.shop || '').localeCompare(b.shop || ''));
-
-  return {
-    kpi: {
-      n_prev: nPrev1, n_curr: nCurr,
-      b_prev: bPrev1, b_curr: bCurr,
-      tỉ_prev: pct(nPrev1, bPrev1), tỉ_curr: pct(nCurr, bCurr),
-      wow_n, wow_p
-    },
-    main, luyke: { rows: lk_rows, tot: lk_tot },
-    vuong: { rows: vuong, rows2: [vuong_tot] },
-    asm, vungList: VU,
-    weekLabels: wLabels,
-    source: 'excel'
-  };
-}
-
-function findRecentWeeks(sh) {
-  const weeks = new Set();
-  const d1 = sh['Volume phiếu nhận'] || [];
-  const d2 = sh['Volume bán'] || [];
-
-  for (const r of [...d1, ...d2]) {
-    const w = String(r['Tuần'] || '').trim();
-    if (w.match(/^W\d+$/i)) weeks.add(w.toUpperCase());
-  }
-
-  const sorted = [...weeks].sort((a, b) => {
-    const na = parseInt(a.replace(/\D/g, ''));
-    const nb = parseInt(b.replace(/\D/g, ''));
-    return nb - na;
-  });
-
-  const recent = sorted.slice(0, 4);
-
-  if (recent.length >= 4) {
-    return {
-      labels: {
-        prev3: recent[3] || recent[0],
-        prev2: recent[2] || recent[0],
-        prev1: recent[1] || recent[0],
-        curr: recent[0]
-      }
-    };
-  }
-
-  return {
-    labels: { prev3: 'W27', prev2: 'W28', prev1: 'W29', curr: 'W30' }
-  };
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// UI HELPERS
-// ═══════════════════════════════════════════════════════════════════
-function showLoading(text) {
-  document.getElementById('loadingOverlay').classList.remove('hidden');
-  document.getElementById('loadingText').textContent = text;
-}
-
-function hideLoading() {
-  document.getElementById('loadingOverlay').classList.add('hidden');
-}
-
-function updateStatus(type, text) {
-  const dot = document.getElementById('statusDot');
-  const txt = document.getElementById('statusText');
-  const badge = document.getElementById('dataSourceBadge');
-
-  dot.className = 'status-dot ' + (type === 'online' ? 'online' : type === 'local' ? 'local' : 'demo');
-  txt.textContent = text;
-
-  if (type === 'online') {
-    badge.textContent = 'GitHub';
-    badge.style.background = '#1E8C4C';
-  } else if (type === 'local') {
-    badge.textContent = 'Cục bộ';
-    badge.style.background = '#E87534';
-  } else {
-    badge.textContent = 'Demo';
-    badge.style.background = '#888';
-  }
-}
-
-function updateWeekHeaders() {
-  const labels = D.weekLabels || { prev3: 'W27', prev2: 'W28', prev1: 'W29', curr: 'W30' };
-
-  // Update all week headers
-  ['tblMain', 'tblVuong', 'tblAsm'].forEach(tblId => {
-    document.querySelectorAll(`#${tblId} th[data-col^="w-"]`).forEach(th => {
-      const col = th.dataset.col;
-      if (labels[col]) {
-        th.innerHTML = labels[col] + '<span class="arr"></span>';
-      }
-    });
-  });
-
-  // Update detail text
-  document.getElementById('dataSourceDetail').textContent =
-    `${labels.prev3} → ${labels.prev2} → ${labels.prev1} → ${labels.curr}`;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// EVENT LISTENERS
-// ═══════════════════════════════════════════════════════════════════
-function setupEventListeners() {
+// ============================================================
+// DOM INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
       document.querySelectorAll('.pane').forEach(x => x.classList.remove('active'));
       t.classList.add('active');
       document.getElementById(t.dataset.p).classList.add('active');
-      setTimeout(resizeCharts, 10);
+      requestAnimationFrame(resizeCharts);
     });
-  });
-
-  document.getElementById('fi').addEventListener('change', e => {
-    if (!e.target.files[0]) return;
-    const f = e.target.files[0];
-    showLoading('Đang xử lý file...');
-
-    const reader = new FileReader();
-    reader.onload = function(ev) {
-      try {
-        const data = new Uint8Array(ev.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
-        D = processWB(wb);
-        D.source = 'local';
-        D.fileName = f.name;
-        updateStatus('local', f.name);
-        updateWeekHeaders();
-        refreshAll();
-        hideLoading();
-      } catch (err) {
-        alert('Lỗi xử lý file: ' + err.message);
-        hideLoading();
-      }
-    };
-    reader.onerror = () => {
-      alert('Lỗi đọc file!');
-      hideLoading();
-    };
-    reader.readAsArrayBuffer(f);
   });
 
   document.getElementById('fVung').addEventListener('change', renderMain);
@@ -901,21 +430,21 @@ function setupEventListeners() {
   document.getElementById('fAA').addEventListener('change', renderAsm);
   document.getElementById('fAS').addEventListener('input', renderAsm);
 
-  document.querySelectorAll('th.sortable').forEach(th => {
+  document.querySelectorAll('th[data-col]').forEach(th => {
     th.addEventListener('click', () => {
       const col = th.dataset.col;
-      const tbl = th.dataset.table;
+      const tbl = th.dataset.tbl;
       const type = th.dataset.type || 's';
-      if (!sortState[tbl] || sortState[tbl].col !== col)
-        sortState[tbl] = { col, dir: 'asc', type };
-      else
-        sortState[tbl].dir = sortState[tbl].dir === 'asc' ? 'desc' : 'asc';
-      document.querySelectorAll('#' + tbl + ' th.sortable').forEach(x => {
+      if (!sortState[tbl] || sortState[tbl].col !== col) sortState[tbl] = { col, dir: 'asc', type };
+      else sortState[tbl].dir = sortState[tbl].dir === 'asc' ? 'desc' : 'asc';
+      document.querySelectorAll(`#${tbl} th[data-col]`).forEach(x => {
         x.classList.remove('sort-asc', 'sort-desc');
-        x.querySelector('.arr').textContent = '';
+        const arr = x.querySelector('.arr');
+        if (arr) arr.textContent = '';
       });
       th.classList.add(sortState[tbl].dir === 'asc' ? 'sort-asc' : 'sort-desc');
-      th.querySelector('.arr').textContent = sortState[tbl].dir === 'asc' ? '▲' : '▼';
+      const arr = th.querySelector('.arr');
+      if (arr) arr.textContent = sortState[tbl].dir === 'asc' ? '▲' : '▼';
       if (tbl === 'tblMain') renderMain();
       else if (tbl === 'tblLuy') renderLuyKe();
       else if (tbl === 'tblVuong') renderVuong();
@@ -923,29 +452,33 @@ function setupEventListeners() {
     });
   });
 
-  window.addEventListener('resize', () => setTimeout(resizeCharts, 10));
-}
+  window.addEventListener('resize', () => requestAnimationFrame(resizeCharts));
 
-// ═══════════════════════════════════════════════════════════════════
-// RENDER FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════
+  refreshAll();
+  fetchFromGitHub();
+});
+
+// ============================================================
+// REFRESH ALL
+// ============================================================
 function refreshAll() {
   renderKpi();
   fillFltV(); renderMain();
   renderLuyKe();
   fillFltA(); renderVuong(); renderAsm();
-  setTimeout(resizeCharts, 10);
+  requestAnimationFrame(resizeCharts);
   document.getElementById('meta').textContent = 'Dữ liệu F.Plus — Generated ' + new Date().toLocaleString('vi-VN');
 }
 
+// ============================================================
+// CHARTS
+// ============================================================
 function resizeCharts() {
-  const labels = D.weekLabels || { prev3: 'W27', prev2: 'W28', prev1: 'W29', curr: 'W30' };
-
   drawBar('cNhan', D.main.map(r => r.vùng), [
-    { label: labels.prev3, data: D.main.map(r => r['w-prev3']), color: '#9ecae1' },
-    { label: labels.prev2, data: D.main.map(r => r['w-prev2']), color: '#6baed6' },
-    { label: labels.prev1, data: D.main.map(r => r['w-prev1']), color: '#4292c6' },
-    { label: labels.curr, data: D.main.map(r => r['w-curr']), color: '#1F3864' },
+    { label: 'W27', data: D.main.map(r => r.w27), color: '#9ecae1' },
+    { label: 'W28', data: D.main.map(r => r.w28), color: '#6baed6' },
+    { label: 'W29', data: D.main.map(r => r.w29), color: '#4292c6' },
+    { label: 'W30', data: D.main.map(r => r.w30), color: '#1F3864' },
   ]);
   drawLine('cTyLe', D.main.map(r => r.vùng), D.main.map(r => r.wow_p));
 }
@@ -954,19 +487,19 @@ function renderKpi() {
   const k = D.kpi;
   document.getElementById('kpi').innerHTML =
     '<div class="card">' +
-    '<div class="lbl">Phiếu nhận</div>' +
-    '<div class="vals"><span class="w-prev">' + fmtN(k.n_prev) + '</span><span class="arr">→</span><span class="w-curr">' + fmtN(k.n_curr) + '</span></div>' +
-    '<div class="sub ' + wCls(k.wow_n) + '">' + wSym(k.wow_n) + ' ' + fmtN(Math.abs(k.wow_n)) + ' phiếu so tuần trước</div>' +
+      '<div class="lbl">Phiếu nhận</div>' +
+      '<div class="vals"><span class="w29">' + fmtN(k.n_w29) + '</span><span class="arr">→</span><span class="w30">' + fmtN(k.n_w30) + '</span></div>' +
+      '<div class="sub ' + wCls(k.wow_n) + '">' + wSym(k.wow_n) + ' ' + fmtN(Math.abs(k.wow_n)) + ' phiếu so tuần trước</div>' +
     '</div>' +
     '<div class="card">' +
-    '<div class="lbl">Volume bán (Shop vệ tinh)</div>' +
-    '<div class="vals"><span class="w-prev">' + fmtN(k.b_prev) + '</span><span class="arr">→</span><span class="w-curr">' + fmtN(k.b_curr) + '</span></div>' +
-    '<div class="sub">Tỉ lệ: ' + pStr(k.tỉ_prev) + ' → ' + pStr(k.tỉ_curr) + '</div>' +
+      '<div class="lbl">Volume bán (Shop vệ tinh)</div>' +
+      '<div class="vals"><span class="w29">' + fmtN(k.b_w29) + '</span><span class="arr">→</span><span class="w30">' + fmtN(k.b_w30) + '</span></div>' +
+      '<div class="sub">Tỉ lệ: ' + pStr(k.tỉ_w29) + ' → ' + pStr(k.tỉ_w30) + '</div>' +
     '</div>' +
     '<div class="card">' +
-    '<div class="lbl">Tỉ lệ khai thác</div>' +
-    '<div class="vals"><span class="w-prev">' + pStr(k.tỉ_prev) + '</span><span class="arr">→</span><span class="w-curr">' + pStr(k.tỉ_curr) + '</span></div>' +
-    '<div class="sub ' + wCls(k.wow_p) + '">' + wSym(k.wow_p) + ' ' + (k.wow_p * 100).toFixed(2) + 'pp so tuần trước</div>' +
+      '<div class="lbl">Tỉ lệ khai thác</div>' +
+      '<div class="vals"><span class="w29">' + pStr(k.tỉ_w29) + '</span><span class="arr">→</span><span class="w30">' + pStr(k.tỉ_w30) + '</span></div>' +
+      '<div class="sub ' + wCls(k.wow_p) + '">' + wSym(k.wow_p) + ' ' + (k.wow_p * 100).toFixed(2) + 'pp so tuần trước</div>' +
     '</div>';
 }
 
@@ -975,16 +508,16 @@ function drawBar(id, labels, series) {
   if (!c) return;
   const ctx = c.getContext('2d');
   const W = c.parentElement.offsetWidth - 24;
-  const H = c.parentElement.clientHeight - 50;
-  c.width = W; c.height = Math.max(H, 80);
-  c.style.width = W + 'px'; c.style.height = c.height + 'px';
-  const P = { l: 48, r: 16, t: 56, b: 40 };
-  const cw = W - P.l - P.r, ch = c.height - P.t - P.b;
+  const H = 280;
+  c.width = W; c.height = H;
+  c.style.width = W + 'px'; c.style.height = H + 'px';
+  const P = { l: 50, r: 18, t: 60, b: 48 };
+  const cw = W - P.l - P.r, ch = H - P.t - P.b;
   const n = labels.length;
-  const bw = (cw / n) * 0.75;
+  const bw = (cw / n) * 0.78;
   const gs = bw / series.length;
   const maxV = Math.max(...series.map(s => Math.max(...s.data, 1)));
-  ctx.clearRect(0, 0, W, c.height);
+  ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = '#888'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
     const v = Math.round(maxV * i / 4);
@@ -1008,7 +541,7 @@ function drawBar(id, labels, series) {
     ctx.fillStyle = '#555'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'center';
     ctx.fillText(labels[i], P.l + i * (cw / n) + cw / n / 2, P.t + ch + 14);
   }
-  let lx = P.l + 4, ly = 16;
+  let lx = P.l + 4, ly = 18;
   for (const s of series) {
     ctx.fillStyle = s.color; ctx.fillRect(lx, ly, 10, 10);
     ctx.fillStyle = '#555'; ctx.font = '11px Segoe UI'; ctx.textAlign = 'left';
@@ -1022,14 +555,14 @@ function drawLine(id, labels, data) {
   if (!c) return;
   const ctx = c.getContext('2d');
   const W = c.parentElement.offsetWidth - 24;
-  const H = c.parentElement.clientHeight - 50;
-  c.width = W; c.height = Math.max(H, 80);
-  c.style.width = W + 'px'; c.style.height = c.height + 'px';
-  const P = { l: 56, r: 16, t: 28, b: 40 };
-  const cw = W - P.l - P.r, ch = c.height - P.t - P.b;
+  const H = 280;
+  c.width = W; c.height = H;
+  c.style.width = W + 'px'; c.style.height = H + 'px';
+  const P = { l: 60, r: 18, t: 30, b: 48 };
+  const cw = W - P.l - P.r, ch = H - P.t - P.b;
   const n = labels.length;
   const mx = Math.max(...data.map(Math.abs), 0.05);
-  ctx.clearRect(0, 0, W, c.height);
+  ctx.clearRect(0, 0, W, H);
   const zy = P.t + ch / 2;
   ctx.fillStyle = '#888'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'right';
   ctx.fillText('+' + (mx * 100).toFixed(1) + 'pp', P.l - 4, P.t + 8);
@@ -1060,13 +593,13 @@ function drawLine(id, labels, data) {
   }
 }
 
+// ============================================================
+// TABLE HELPERS
+// ============================================================
 function mkCell(v, fmt) {
   if (v == null || v === '') return '<span class="t-zero">—</span>';
   if (typeof v === 'string') return escHtml(v);
-  if (fmt === 'pct') {
-    const cls = pctClass(v);
-    return '<span class="t-pct ' + (v === 0 ? '' : 'ratio ' + cls) + '">' + (v === 0 ? '—' : pStr(v)) + '</span>';
-  }
+  if (fmt === 'pct') return '<span class="t-pct">' + (v === 0 ? '—' : pStr(v)) + '</span>';
   if (fmt === 'wow_n') {
     if (v > 0) return '<span class="t-pos">+' + v + '</span>';
     if (v < 0) return '<span class="t-neg">' + v + '</span>';
@@ -1080,33 +613,35 @@ function mkCell(v, fmt) {
 }
 
 function mkRow(r, cols) {
-  let h = '<tr>';
-  for (const col of cols) h += '<td>' + mkCell(r[col.key], col.fmt || '') + '</td>';
-  return h + '</tr>';
+  let html = '<tr>';
+  for (const col of cols) html += '<td>' + mkCell(r[col.key], col.fmt || '') + '</td>';
+  return html + '</tr>';
 }
 
 function mkTot(cols, tot) {
-  let h = '<tr class="tot">';
-  for (const col of cols) h += '<td>' + mkCell(tot[col.key], col.fmt || '') + '</td>';
-  return h + '</tr>';
+  let html = '<tr class="tot">';
+  for (const col of cols) html += '<td>' + mkCell(tot[col.key], col.fmt || '') + '</td>';
+  return html + '</tr>';
 }
 
 function applySort(rows, tbl) {
   const s = sortState[tbl];
   if (!s) return rows;
-  const a = rows.slice();
-  a.sort((x, y) => {
+  const sorted = rows.slice();
+  sorted.sort((a, b) => {
+    const va = a[s.col], vb = b[s.col];
     let cmp;
-    if (s.type === 'n') cmp = (x[s.col] || 0) - (y[s.col] || 0);
-    else cmp = String(x[s.col] || '').localeCompare(String(y[s.col] || ''), 'vi');
+    if (s.type === 'n') cmp = (va || 0) - (vb || 0);
+    else cmp = String(va || '').localeCompare(String(vb || ''), 'vi');
     return s.dir === 'asc' ? cmp : -cmp;
   });
-  return a;
+  return sorted;
 }
 
 function makeBody(id, rows, cols, tot) {
   const tb = document.querySelector('#' + id + ' tbody');
-  tb.innerHTML = applySort(rows, id).map(r => mkRow(r, cols)).join('') + (tot ? mkTot(cols, tot) : '');
+  const sorted = applySort(rows, id);
+  tb.innerHTML = sorted.map(r => mkRow(r, cols)).join('') + (tot ? mkTot(cols, tot) : '');
 }
 
 function fillSelect(id, vals) {
@@ -1116,23 +651,33 @@ function fillSelect(id, vals) {
 }
 
 function fillFltV() { fillSelect('fVung', D.vungList); }
+function fillFltA() { fillSelect('fAV', D.vungList); fillAA(); }
 
+function fillAA() {
+  const fv = document.getElementById('fAV').value;
+  const asms = [...new Set((fv ? D.asm.filter(r => r.vùng === fv) : D.asm).map(r => r.asm))].sort();
+  fillSelect('fAA', asms);
+}
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
 function renderMain() {
   const fv = document.getElementById('fVung').value;
   const rows = fv ? D.main.filter(r => r.vùng === fv) : D.main;
   const k = D.kpi;
   const cols = [
     { key: 'vùng' },
-    { key: 'w-prev3', fmt: 'n' }, { key: 'w-prev2', fmt: 'n' }, { key: 'w-prev1', fmt: 'n' }, { key: 'w-curr', fmt: 'n' },
+    { key: 'w27', fmt: 'n' }, { key: 'w28', fmt: 'n' }, { key: 'w29', fmt: 'n' }, { key: 'w30', fmt: 'n' },
     { key: 'tổng', fmt: 'n' }, { key: 'wow_n', fmt: 'wow_n' }, { key: 'wow_p', fmt: 'wow_p' }
   ];
   const tot = fv ? null : {
     vùng: 'Tổng',
-    'w-prev3': D.main.reduce((s, r) => s + (r['w-prev3'] || 0), 0),
-    'w-prev2': D.main.reduce((s, r) => s + (r['w-prev2'] || 0), 0),
-    'w-prev1': D.main.reduce((s, r) => s + (r['w-prev1'] || 0), 0),
-    'w-curr': D.main.reduce((s, r) => s + (r['w-curr'] || 0), 0),
-    tổng: D.main.reduce((s, r) => s + (r.tổng || 0), 0),
+    w27: D.main.reduce((s, r) => s + r.w27, 0),
+    w28: D.main.reduce((s, r) => s + r.w28, 0),
+    w29: D.main.reduce((s, r) => s + r.w29, 0),
+    w30: D.main.reduce((s, r) => s + r.w30, 0),
+    tổng: D.main.reduce((s, r) => s + r.tổng, 0),
     wow_n: k.wow_n, wow_p: k.wow_p
   };
   makeBody('tblMain', rows, cols, tot);
@@ -1150,18 +695,10 @@ function renderLuyKe() {
 function renderVuong() {
   const cols = [
     { key: 'vùng' },
-    { key: 'w-prev3', fmt: 'n' }, { key: 'w-prev2', fmt: 'n' }, { key: 'w-prev1', fmt: 'n' }, { key: 'w-curr', fmt: 'n' },
-    { key: 'tổng', fmt: 'n' }, { key: 'bán_w-curr', fmt: 'n' }, { key: 'tỉ_lệ', fmt: 'pct' }
+    { key: 'w27', fmt: 'n' }, { key: 'w28', fmt: 'n' }, { key: 'w29', fmt: 'n' }, { key: 'w30', fmt: 'n' },
+    { key: 'tổng', fmt: 'n' }, { key: 'bán_w30', fmt: 'n' }, { key: 'tỉ_lệ', fmt: 'pct' }
   ];
   makeBody('tblVuong', D.vuong.rows, cols, D.vuong.rows2 && D.vuong.rows2[0]);
-}
-
-function fillFltA() { fillSelect('fAV', D.vungList); fillAA(); }
-
-function fillAA() {
-  const fv = document.getElementById('fAV').value;
-  const asms = [...new Set((fv ? D.asm.filter(r => r.vùng === fv) : D.asm).map(r => r.asm))].sort();
-  fillSelect('fAA', asms);
 }
 
 function renderAsm() {
@@ -1174,37 +711,129 @@ function renderAsm() {
   if (fs) rows = rows.filter(r => (r.shop || '').toLowerCase().includes(fs));
   const cols = [
     { key: 'asm' }, { key: 'vùng' }, { key: 'shop' },
-    { key: 'w-prev3', fmt: 'n' }, { key: 'w-prev2', fmt: 'n' }, { key: 'w-prev1', fmt: 'n' }, { key: 'w-curr', fmt: 'n' },
-    { key: 'bán_w-curr', fmt: 'n' }, { key: 'tỉ_lệ', fmt: 'pct' }
+    { key: 'w27', fmt: 'n' }, { key: 'w28', fmt: 'n' }, { key: 'w29', fmt: 'n' }, { key: 'w30', fmt: 'n' },
+    { key: 'bán_w30', fmt: 'n' }, { key: 'tỉ_lệ', fmt: 'pct' }
   ];
   const tot = rows.length ? {
     asm: 'Tổng (' + rows.length + ' shops)', vùng: '', shop: '',
-    'w-prev3': rows.reduce((s, r) => s + (r['w-prev3'] || 0), 0),
-    'w-prev2': rows.reduce((s, r) => s + (r['w-prev2'] || 0), 0),
-    'w-prev1': rows.reduce((s, r) => s + (r['w-prev1'] || 0), 0),
-    'w-curr': rows.reduce((s, r) => s + (r['w-curr'] || 0), 0),
-    'bán_w-curr': rows.reduce((s, r) => s + (r['bán_w-curr'] || 0), 0),
-    tỉ_lệ: rows.reduce((s, r) => s + (r['w-curr'] || 0), 0) / Math.max(1, rows.reduce((s, r) => s + (r['bán_w-curr'] || 0), 0))
+    w27: rows.reduce((s, r) => s + r.w27, 0), w28: rows.reduce((s, r) => s + r.w28, 0),
+    w29: rows.reduce((s, r) => s + r.w29, 0), w30: rows.reduce((s, r) => s + r.w30, 0),
+    bán_w30: rows.reduce((s, r) => s + r.bán_w30, 0),
+    tỉ_lệ: rows.reduce((s, r) => s + r.w30, 0) / Math.max(1, rows.reduce((s, r) => s + r.bán_w30, 0))
   } : null;
   makeBody('tblAsm', rows, cols, tot);
 }
 
-function pctClass(v) {
-  if (v >= 0.05) return 'ratio-green';
-  if (v > 0) return 'ratio-yellow';
-  if (v < 0) return 'ratio-red';
-  return '';
-}
+// ============================================================
+// PROCESS WORKBOOK
+// ============================================================
+function processWB(wb) {
+  const sh = {};
+  for (const n of wb.SheetNames) sh[n] = XLSX.utils.sheet_to_json(wb.Sheets[n], { defval: '' });
 
-// ═══════════════════════════════════════════════════════════════════
-// UTILITY FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════
-const pct = (n, b) => b ? n / b : 0;
-const pStr = v => (v == null || isNaN(v)) ? '—' : (v * 100).toFixed(2) + '%';
-const fmtN = v => (v == null || isNaN(v)) ? '—' : v.toLocaleString('vi-VN');
-const wCls = v => v > 0 ? 'up' : v < 0 ? 'dn' : '';
-const wSym = v => v > 0 ? '▲' : v < 0 ? '▼ ' : '';
-const escHtml = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const VU = ['Hà Nội', 'Hồ Chí Minh', 'Miền Bắc 1', 'Miền Bắc 2', 'Miền Đông', 'Miền Tây', 'Miền Trung'];
+  const MO = [3, 4, 5, 6, 7];
+
+  const d1 = sh['Volume phiếu nhận'] || [];
+  const d2 = (sh['Volume bán'] || []).filter(r => r['Shop vệ tinh'] === 'Shop vệ tinh');
+  const dA = (sh['SL shop nhận máy F.Plus vùng'] || []).filter(r => r['Shop']);
+
+  const n_vw = {}, n_vm = {};
+  for (const v of VU) { n_vw[v] = {}; n_vm[v] = {}; }
+  for (const r of d1) {
+    const v = String(r['Vùng kinh doanh shop'] || '').trim();
+    const w = String(r['Tuần'] || '').trim();
+    const m = Number(r['Tháng']);
+    if (!VU.includes(v)) continue;
+    n_vw[v][w] = (n_vw[v][w] || 0) + 1;
+    if (!isNaN(m)) n_vm[v][m] = (n_vm[v][m] || 0) + 1;
+  }
+
+  const b_vw = {}, b_vm = {};
+  for (const v of VU) { b_vw[v] = {}; b_vm[v] = {}; }
+  for (const r of d2) {
+    const v = String(r['Vùng kinh doạnh'] || '').trim();
+    const w = String(r['Tuần'] || '').trim();
+    const m = Number(r['Tháng']);
+    if (!VU.includes(v)) continue;
+    b_vw[v][w] = (b_vw[v][w] || 0) + 1;
+    if (!isNaN(m)) b_vm[v][m] = (b_vm[v][m] || 0) + 1;
+  }
+
+  const nW29 = VU.reduce((s, v) => s + (n_vw[v]['W29'] || 0), 0);
+  const nW30 = VU.reduce((s, v) => s + (n_vw[v]['W30'] || 0), 0);
+  const bW29 = VU.reduce((s, v) => s + (b_vw[v]['W29'] || 0), 0);
+  const bW30 = VU.reduce((s, v) => s + (b_vw[v]['W30'] || 0), 0);
+  const wow_n = nW30 - nW29;
+  const wow_p = pct(nW30, bW30) - pct(nW29, bW29);
+
+  const main = VU.map(v => {
+    const w27 = n_vw[v]['W27'] || 0, w28 = n_vw[v]['W28'] || 0, w29 = n_vw[v]['W29'] || 0, w30 = n_vw[v]['W30'] || 0;
+    return {
+      vùng: v, w27, w28, w29, w30, tổng: w27 + w28 + w29 + w30,
+      wow_n: w30 - w29,
+      wow_p: pct(w30, b_vw[v]['W30'] || 0) - pct(w29, b_vw[v]['W29'] || 0)
+    };
+  });
+
+  const lk_rows = VU.map(v => {
+    const row = { vùng: v };
+    for (const m of MO) row['th' + m] = pct(n_vm[v][m] || 0, b_vm[v][m] || 0);
+    return row;
+  });
+  const lk_tot = { vùng: 'Tổng' };
+  for (const m of MO) lk_tot['th' + m] = pct(
+    VU.reduce((s, v) => s + (n_vm[v][m] || 0), 0),
+    VU.reduce((s, v) => s + (b_vm[v][m] || 0), 0)
+  );
+
+  const vuong = VU.map(v => {
+    const w27 = n_vw[v]['W27'] || 0, w28 = n_vw[v]['W28'] || 0, w29 = n_vw[v]['W29'] || 0, w30 = n_vw[v]['W30'] || 0;
+    const b30 = b_vw[v]['W30'] || 0;
+    return { vùng: v, w27, w28, w29, w30, tổng: w27 + w28 + w29 + w30, bán_w30: b30, tỉ_lệ: pct(w30, b30) };
+  });
+  const vuong_tot = {
+    vùng: 'Tổng',
+    w27: VU.reduce((s, v) => s + (n_vw[v]['W27'] || 0), 0),
+    w28: VU.reduce((s, v) => s + (n_vw[v]['W28'] || 0), 0),
+    w29: VU.reduce((s, v) => s + (n_vw[v]['W29'] || 0), 0),
+    w30: nW30,
+    tổng: VU.reduce((s, v) => s + (n_vw[v]['W27'] || 0) + (n_vw[v]['W28'] || 0) + (n_vw[v]['W29'] || 0) + (n_vw[v]['W30'] || 0), 0),
+    bán_w30: bW30, tỉ_lệ: pct(nW30, bW30)
+  };
+
+  const sn = {};
+  for (const r of d1) {
+    const shop = String(r['Cửa hàng'] || '').trim();
+    const w = String(r['Tuần'] || '').trim();
+    if (!shop) continue;
+    if (!sn[shop]) sn[shop] = {};
+    sn[shop][w] = (sn[shop][w] || 0) + 1;
+  }
+  const sb = {};
+  for (const r of d2) {
+    const shop = String(r['Shop Name'] || '').trim();
+    const w = String(r['Tuần'] || '').trim();
+    if (!shop) continue;
+    if (!sb[shop]) sb[shop] = {};
+    sb[shop][w] = (sb[shop][w] || 0) + 1;
+  }
+  const asm = dA.map(r => {
+    const shop = String(r['Shop'] || '').trim();
+    const w27 = sn[shop]?.['W27'] || 0, w28 = sn[shop]?.['W28'] || 0, w29 = sn[shop]?.['W29'] || 0, w30 = sn[shop]?.['W30'] || 0;
+    const b30 = sb[shop]?.['W30'] || 0;
+    return { asm: String(r['ASM'] || '').trim(), vùng: String(r['Vùng'] || '').trim(), shop, w27, w28, w29, w30, bán_w30: b30, tỉ_lệ: pct(w30, b30) };
+  })
+    .filter(r => r.vùng && VU.includes(r.vùng))
+    .sort((a, b) => (a.asm || '').localeCompare(b.asm || '') || (a.vùng || '').localeCompare(b.vùng || '') || (a.shop || '').localeCompare(b.shop || ''));
+
+  return {
+    kpi: { n_w29: nW29, n_w30: nW30, b_w29: bW29, b_w30: bW30, tỉ_w29: pct(nW29, bW29), tỉ_w30: pct(nW30, bW30), wow_n, wow_p },
+    main, luyke: { rows: lk_rows, tot: lk_tot },
+    vuong: { rows: vuong, rows2: [vuong_tot] },
+    asm, vungList: VU
+  };
+}
 </script>
 </body>
 </html>
