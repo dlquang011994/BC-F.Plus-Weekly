@@ -3,837 +3,1059 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>F.Plus Weekly Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<title>F.PLUS — Dashboard Khai Thác V2.0 (Auto-Sync)</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #333; font-size: 13px; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --fpt-blue: #1250A2;
+  --fpt-orange: #F26D21;
+  --fpt-green: #50B848;
+  --border-color: #e5e7eb;
+  --bg-body: #F4F7F9;
+  --text-main: #333333;
+  --bg-green: #dcfce7; --text-green: #15803d;
+  --bg-red: #fee2e2;   --text-red: #b91c1c;
+  --bg-yellow: #fef3c7; --text-yellow: #a16207;
+}
 
-header {
-  background: #1F3864;
-  color: #fff;
-  padding: 10px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
+body { 
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+  background: #cbd5e1; 
+  padding: 20px;
+  color: var(--text-main);
 }
-header h1 { font-size: 18px; font-weight: 700; }
-header .header-right { display: flex; align-items: center; gap: 10px; }
-header button, header .btn {
-  background: #F4B942;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  color: #1F3864;
-}
-header button:hover, header .btn:hover { background: #e0a530; }
-header .btn-github {
-  background: #24292e;
-  color: #fff;
-}
-header .btn-github:hover { background: #444; }
 
-#ghStatus { font-size: 11px; color: #aaa; white-space: nowrap; }
-
-.topbar {
-  background: #fff;
-  border-bottom: 1px solid #dde3ec;
-  padding: 8px 18px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  font-size: 12px;
-}
-.topbar label { display: flex; align-items: center; gap: 5px; }
-.topbar select, .topbar input {
-  border: 1px solid #c1cdd9;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 12px;
-  background: #fff;
-}
-.topbar input { width: 200px; }
-
-.tabs {
-  display: flex;
-  background: #fff;
-  border-bottom: 2px solid #1F3864;
-  padding: 0 18px;
-}
-.tab {
-  padding: 8px 20px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  color: #666;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-  user-select: none;
-}
-.tab:hover { color: #1F3864; }
-.tab.active { color: #1F3864; border-bottom-color: #F4B942; }
-
-.pane { display: none; padding: 14px 18px; }
-.pane.active { display: block; }
-
-.kpi { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
-.card {
-  background: #fff;
+.report-wrapper {
+  max-width: 1200px; 
+  margin: 0 auto;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
   border-radius: 8px;
-  padding: 14px 18px;
-  flex: 1;
-  min-width: 180px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
-}
-.card .lbl { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
-.card .vals { font-size: 26px; font-weight: 700; color: #1F3864; display: flex; align-items: baseline; gap: 6px; }
-.card .w29 { color: #888; font-size: 20px; font-weight: 400; }
-.card .w30 { color: #1F3864; }
-.card .arr { color: #ccc; font-size: 18px; font-weight: 400; }
-.card .sub { font-size: 11px; color: #888; margin-top: 4px; }
-.card .sub.up { color: #1E8C4C; }
-.card .sub.dn { color: #C00000; }
-
-.charts { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
-.chart-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 14px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
-  flex: 1;
-  min-width: 340px;
-}
-.chart-card h3 { font-size: 13px; color: #1F3864; margin-bottom: 10px; font-weight: 700; }
-canvas { display: block; }
-
-.tbl-wrap {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
   overflow: hidden;
-  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 1100px; 
 }
-.tbl-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1F3864;
-  padding: 10px 14px 6px;
-  border-bottom: 1px solid #e8edf4;
-}
-.tbl-wrap table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.tbl-wrap thead th {
-  background: #1F3864;
-  color: #fff;
-  padding: 7px 10px;
-  text-align: left;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  user-select: none;
-}
-.tbl-wrap thead th:first-child { cursor: default; }
-.tbl-wrap thead th:hover:not(:first-child) { background: #2a4f8a; }
-.tbl-wrap th .arr { font-size: 9px; margin-left: 3px; }
-.tbl-wrap th.sort-asc { background: #2a4f8a; }
-.tbl-wrap th.sort-desc { background: #2a4f8a; }
-.tbl-wrap tbody td { padding: 6px 10px; border-bottom: 1px solid #eef1f5; color: #444; }
-.tbl-wrap tbody tr:hover td { background: #f5f8ff; }
-.tbl-wrap tbody tr.tot td { background: #f0f4f8; font-weight: 700; color: #1F3864; border-top: 2px solid #c1cdd9; }
-.tbl-wrap .t-pct { font-weight: 600; color: #1F3864; }
-.tbl-wrap .t-pos { color: #1E8C4C; font-weight: 600; }
-.tbl-wrap .t-neg { color: #C00000; font-weight: 600; }
-.tbl-wrap .t-zero { color: #bbb; }
-.tbl-wrap .num { text-align: right; font-variant-numeric: tabular-nums; }
 
-footer {
-  text-align: center;
-  padding: 10px;
-  font-size: 11px;
-  color: #aaa;
-  border-top: 1px solid #e8edf4;
+.header { 
+  background: #ffffff; 
+  color: var(--fpt-blue); 
+  padding: 16px 24px;
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  flex-wrap: wrap; 
+  gap: 10px; 
+  border-bottom: 2px solid var(--border-color);
+  position: relative;
+}
+.header::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--fpt-blue) 0%, var(--fpt-orange) 50%, var(--fpt-green) 100%);
+}
+.header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+
+.btn-upload { 
+  background: var(--fpt-orange); 
+  color: #FFFFFF; 
+  border: none;
+  padding: 8px 18px; 
+  border-radius: 4px; 
+  cursor: pointer; 
+  font-weight: 600; 
+  font-size: 13px; 
+  transition: all 0.2s ease;
+}
+.btn-upload:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 3px 6px rgba(242, 109, 33, 0.3); }
+
+.main-layout { display: flex; flex-grow: 1; }
+
+.sidebar { 
+  width: 230px; 
+  background: var(--fpt-blue); 
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 16px;
+}
+.tab { 
+  padding: 16px 24px; 
+  color: rgba(255, 255, 255, 0.7); 
+  cursor: pointer; 
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  border: none; 
+  background: transparent; 
+  border-left: 4px solid transparent; 
+  transition: all 0.2s ease;
+}
+.tab:hover { color: #FFFFFF; background: rgba(255,255,255,0.05); }
+.tab.active { 
+  background: rgba(255,255,255,0.1); 
+  color: #ffffff; 
+  border-left: 4px solid var(--fpt-orange); 
+  font-weight: 600;
+}
+
+.content { 
+  flex-grow: 1; 
+  padding: 24px 30px; 
+  background: var(--bg-body); 
+  width: calc(100% - 230px); 
+}
+
+.kpi-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
+.kpi-card { 
+  background: #fff; 
+  border-radius: 6px;
+  padding: 18px 20px; 
+  flex: 1; 
+  min-width: 180px; 
+  box-shadow: 0 2px 5px rgba(0,0,0,0.06); 
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+  background: var(--fpt-blue);
+}
+.kpi-card:nth-child(2)::before { background: var(--fpt-orange); }
+.kpi-card:nth-child(3)::before { background: var(--fpt-green); }
+
+.kpi-card .label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.kpi-card .value { font-size: 28px; font-weight: 700; color: var(--text-main); margin: 8px 0; }
+.kpi-card .sub { font-size: 12px; color: #6b7280; font-weight: 500; }
+.kpi-card .sub.up { color: var(--text-green); }
+.kpi-card .sub.dn { color: var(--text-red); }
+
+.chart-box { 
+  background: #fff; 
+  border-radius: 6px; 
+  padding: 20px; 
+  margin-bottom: 24px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.06); 
+}
+.chart-title { font-size: 14px; color: var(--text-main); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; }
+canvas#barChart { max-width: 100%; }
+
+.tbl-wrap { 
+  background: #fff; 
+  border-radius: 6px; 
+  margin-bottom: 24px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.06); 
+  overflow: hidden; 
+}
+.tbl-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  padding: 16px 20px; 
+  border-bottom: 1px solid var(--border-color); 
+  flex-wrap: wrap; 
+  gap: 12px; 
+}
+.tbl-name { font-size: 15px; font-weight: 600; color: var(--fpt-blue); cursor: pointer; text-transform: uppercase;}
+.tbl-name:hover { text-decoration: underline; }
+.tbl-filters { display: flex; gap: 10px; flex-wrap: wrap; }
+.tbl-filters select, .tbl-filters input {
+  border: 1px solid #d1d5db; 
+  border-radius: 4px; 
+  padding: 6px 12px; 
+  font-size: 13px; 
+  color: #374151;
+  outline: none;
+}
+.tbl-filters select:focus, .tbl-filters input:focus { border-color: var(--fpt-blue); }
+.tbl-filters input { width: 180px; }
+
+.table-responsive { width: 100%; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { 
+  background: var(--fpt-blue); color: #fff; padding: 10px 12px; 
+  text-align: right; cursor: pointer; white-space: nowrap; 
+  position: relative; user-select: none; font-weight: 600;
+}
+th.txt-l { text-align: left; }
+th.sorted-asc::after { content: ' \25B2'; color: var(--fpt-orange); margin-left: 4px; }
+th.sorted-desc::after { content: ' \25BC'; color: var(--fpt-orange); margin-left: 4px; }
+
+td { 
+  padding: 9px 12px; text-align: right; border-bottom: 1px solid #f3f4f6; 
+  color: #4b5563; white-space: nowrap; 
+}
+td.txt-l { text-align: left; font-weight: 500; color: #111827; white-space: normal; min-width: 120px; }
+tr:hover td { background: #f9fafb; color: #111827; }
+
+tr.tot { background: var(--fpt-blue) !important; }
+tr.tot td { border-bottom: none; color: #fff !important; font-weight: 700; }
+tr.tot:hover td { background: var(--fpt-blue) !important; }
+
+.cell-green { color: var(--fpt-green); font-weight: 700; }
+.cell-orange { color: var(--fpt-orange); font-weight: 700; }
+.cell-up { background: var(--bg-green); color: var(--text-green); font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+.cell-dn { background: var(--bg-red); color: var(--text-red); font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+.cell-z { background: var(--bg-yellow); color: var(--text-yellow); font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#fileInput { display: none; }
+#loading-overlay { 
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+  background: rgba(18, 80, 162, 0.85); z-index: 9999; color: white; 
+  font-size: 20px; font-weight: 600; text-align: center; padding-top: 20%; 
+  backdrop-filter: blur(4px);
 }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>F.Plus — Báo Cáo Khai Thác Hàng Tuần</h1>
-  <div class="header-right">
-    <span id="ghStatus">Đang kết nối GitHub…</span>
-    <label style="font-size:11px;color:#ccc;cursor:pointer;" title="Upload file Excel cục bộ">
-      📂 Tải file cục bộ
-      <input type="file" id="fi" accept=".xlsb,.xlsx,.xls" style="display:none;">
-    </label>
+<div id="loading-overlay">Đang kết nối Google Drive, vui lòng chờ...</div>
+
+<div class="report-wrapper">
+  
+  <div class="header">
+    <h1>F.PLUS — Dashboard Khai Thác V2.0 (Live Sync)</h1>
+    <button class="btn-upload" onclick="document.getElementById('fileInput').click()">Dự phòng: Upload file</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
   </div>
-</header>
 
-<div class="topbar">
-  <strong>Filters:</strong>
-  <label>Vùng <select id="fVung"><option value="">Tất cả</option></select></label>
-  <label>Vùng (ASM) <select id="fAV"><option value="">Tất cả</option></select></label>
-  <label>ASM <select id="fAA"><option value="">Tất cả</option></select></label>
-  <label>🔍 Shop <input type="text" id="fAS" placeholder="Tìm shop…"></label>
-  <span id="st" style="margin-left:auto;font-size:11px;color:#888;"></span>
-</div>
-
-<div class="tabs">
-  <div class="tab active" data-p="pnOverview">Tổng quan</div>
-  <div class="tab" data-p="pnDetail">Chi tiết</div>
-</div>
-
-<div id="pnOverview" class="pane active">
-  <div id="kpi" class="kpi"></div>
-  <div class="charts">
-    <div class="chart-card">
-      <h3>Phiếu nhận theo tuần</h3>
-      <canvas id="cNhan"></canvas>
+  <div class="main-layout">
+    
+    <div class="sidebar">
+      <button class="tab active" onclick="switchTab(this, 'tab1')">Tổng quan</button>
+      <button class="tab" onclick="switchTab(this, 'tab2')">Chi tiết</button>
     </div>
-    <div class="chart-card">
-      <h3>Tỉ lệ WoW theo vùng</h3>
-      <canvas id="cTyLe"></canvas>
+
+    <div class="content">
+      
+      <div id="tab1" class="tab-content active">
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="label">Phiếu nhận <span id="kpi-w-cur"></span></div>
+            <div class="value" id="kpi-n">-</div>
+            <div class="sub" id="kpi-n-sub">Đang đồng bộ...</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">Phiếu bán SVT <span id="kpi-w2"></span></div>
+            <div class="value" id="kpi-ban">-</div>
+            <div class="sub" id="kpi-ban-sub">Đang đồng bộ...</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">Tỉ lệ khai thác <span id="kpi-w3"></span></div>
+            <div class="value" id="kpi-ti">-</div>
+            <div class="sub" id="kpi-ti-sub">Đang đồng bộ...</div>
+          </div>
+        </div>
+
+        <div class="chart-box">
+          <div class="chart-title">Phiếu nhận theo tuần</div>
+          <canvas id="barChart" height="100"></canvas>
+        </div>
+
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <span class="tbl-name" ondblclick="renameTbl(this)">Phiếu nhận 4 tuần gần nhất</span>
+            <div class="tbl-filters">
+              <select id="f-vung-main" onchange="filterMain()"><option value="">Tất cả Vùng</option></select>
+            </div>
+          </div>
+          <div class="table-responsive">
+          <table id="tbl-main"><thead id="thead-main"></thead><tbody id="tbody-main"></tbody></table>
+          </div>
+        </div>
+
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <span class="tbl-name" ondblclick="renameTbl(this)">Luỹ kế tỉ lệ theo tháng</span>
+          </div>
+          <div class="table-responsive">
+          <table id="tbl-luyke"><thead id="thead-luyke"></thead><tbody id="tbody-luyke"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab2" class="tab-content">
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <span class="tbl-name" ondblclick="renameTbl(this)">Phiếu nhận 4 tuần gần nhất theo Vùng (SVT)</span>
+            <div class="tbl-filters">
+              <select id="f-vung-vuong" onchange="filterVuong()"><option value="">Tất cả Vùng</option></select>
+            </div>
+          </div>
+          <div class="table-responsive">
+          <table id="tbl-vuong"><thead id="thead-vuong"></thead><tbody id="tbody-vuong"></tbody></table>
+          </div>
+        </div>
+
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <span class="tbl-name" ondblclick="renameTbl(this)">Phiếu theo ASM</span>
+            <div class="tbl-filters">
+              <select id="f-vung-asm" onchange="onVungChange()"><option value="">Tất cả Vùng</option></select>
+              <select id="f-asm" onchange="filterAsm()"><option value="">Tất cả ASM</option></select>
+              <input type="text" id="f-shop" placeholder="Tìm shop..." oninput="filterAsm()">
+            </div>
+          </div>
+          <div class="table-responsive">
+          <table id="tbl-asm"><thead id="thead-asm"></thead><tbody id="tbody-asm"></tbody></table>
+          </div>
+        </div>
+
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <span class="tbl-name" ondblclick="renameTbl(this)">Phiếu theo Shop</span>
+            <div class="tbl-filters">
+              <select id="f-loai-shop" onchange="filterShop()">
+                <option value="svt">Shop vệ tinh</option>
+                <option value="khong">Không phải shop vệ tinh</option>
+                <option value="all">Tất cả</option>
+              </select>
+              <select id="f-vung-shop" onchange="filterShop()"><option value="">Tất cả Vùng</option></select>
+              <select id="f-asm-shop" onchange="filterShop()"><option value="">Tất cả ASM</option></select>
+              <input type="text" id="f-shop-txt" placeholder="Tìm shop..." oninput="filterShop()">
+            </div>
+          </div>
+          <div class="table-responsive">
+          <table id="tbl-shop"><thead id="thead-shop"></thead><tbody id="tbody-shop"></tbody></table>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
-  <div class="tbl-wrap">
-    <div class="tbl-title">Phiếu nhận theo vùng</div>
-    <table id="tblMain">
-      <thead>
-        <tr>
-          <th data-col="vùng">Vùng <span class="arr"></span></th>
-          <th class="num" data-col="w27" data-type="n" data-tbl="tblMain">W27 <span class="arr"></span></th>
-          <th class="num" data-col="w28" data-type="n" data-tbl="tblMain">W28 <span class="arr"></span></th>
-          <th class="num" data-col="w29" data-type="n" data-tbl="tblMain">W29 <span class="arr"></span></th>
-          <th class="num" data-col="w30" data-type="n" data-tbl="tblMain">W30 <span class="arr"></span></th>
-          <th class="num" data-col="tổng" data-type="n" data-tbl="tblMain">Tổng <span class="arr"></span></th>
-          <th class="num" data-col="wow_n" data-type="n" data-tbl="tblMain">WoW <span class="arr"></span></th>
-          <th class="num" data-col="wow_p" data-type="n" data-tbl="tblMain">% WoW <span class="arr"></span></th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div class="tbl-wrap">
-    <div class="tbl-title">Lũy kế theo tháng</div>
-    <table id="tblLuy">
-      <thead>
-        <tr>
-          <th>Vùng</th>
-          <th class="num">Th3</th>
-          <th class="num">Th4</th>
-          <th class="num">Th5</th>
-          <th class="num">Th6</th>
-          <th class="num">Th7</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
 </div>
 
-<div id="pnDetail" class="pane">
-  <div class="tbl-wrap">
-    <div class="tbl-title">Phiếu nhận theo vùng (có Volume bán)</div>
-    <table id="tblVuong">
-      <thead>
-        <tr>
-          <th>Vùng</th>
-          <th class="num">W27</th>
-          <th class="num">W28</th>
-          <th class="num">W29</th>
-          <th class="num">W30</th>
-          <th class="num">Tổng</th>
-          <th class="num">Bán W30</th>
-          <th class="num">Tỉ lệ</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div class="tbl-wrap">
-    <div class="tbl-title">Chi tiết Shop / ASM</div>
-    <table id="tblAsm">
-      <thead>
-        <tr>
-          <th>ASM</th>
-          <th>Vùng</th>
-          <th>Shop</th>
-          <th class="num">W27</th>
-          <th class="num">W28</th>
-          <th class="num">W29</th>
-          <th class="num">W30</th>
-          <th class="num">Bán W30</th>
-          <th class="num">Tỉ lệ</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</div>
-
-<footer id="meta">Dữ liệu F.Plus</footer>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-// ============================================================
-// GITHUB CONFIGURATION
-// ============================================================
-const GITHUB_CONFIG = {
-  owner: 'dlquang011994',
-  repo: 'BC-F.Plus-Weekly',
-  branch: 'main',
-  latestJsonPath: 'latest.json',
-  dataFolder: '.'
-};
+let DATA = null;
+let sortState = {};
 
-// ============================================================
-// SAMPLE DATA
-// ============================================================
-const FULL_DATA = {
-  kpi: {"n_w29": 410, "n_w30": 448, "b_w29": 5047, "b_w30": 4863, "tỉ_w29": 0.081236, "tỉ_w30": 0.092124, "wow_n": 38, "wow_p": 0.010888},
-  main: [
-    {"vùng": "Hà Nội", "w27": 54, "w28": 55, "w29": 48, "w30": 47, "tổng": 204, "wow_n": -1, "wow_p": 0.000308},
-    {"vùng": "Hồ Chí Minh", "w27": 94, "w28": 100, "w29": 115, "w30": 112, "tổng": 421, "wow_n": -3, "wow_p": -0.001233},
-    {"vùng": "Miền Bắc 1", "w27": 71, "w28": 58, "w29": 61, "w30": 64, "tổng": 254, "wow_n": 3, "wow_p": 0.045267},
-    {"vùng": "Miền Bắc 2", "w27": 45, "w28": 53, "w29": 56, "w30": 60, "tổng": 214, "wow_n": 4, "wow_p": -0.017167},
-    {"vùng": "Miền Đông", "w27": 0, "w28": 57, "w29": 52, "w30": 68, "tổng": 177, "wow_n": 16, "wow_p": 0.066835},
-    {"vùng": "Miền Tây", "w27": 45, "w28": 63, "w29": 49, "w30": 52, "tổng": 209, "wow_n": 3, "wow_p": 0.024766},
-    {"vùng": "Miền Trung", "w27": 23, "w28": 27, "w29": 29, "w30": 45, "tổng": 124, "wow_n": 16, "wow_p": 0.024925}
-  ],
-  luyke: {
-    "rows": [
-      {"vùng": "Hà Nội", "th3": 0.020229, "th4": 0.025976, "th5": 0.019372, "th6": 0.023543, "th7": 0.025485},
-      {"vùng": "Hồ Chí Minh", "th3": 0.060295, "th4": 0.054312, "th5": 0.045999, "th6": 0.068938, "th7": 0.080638},
-      {"vùng": "Miền Bắc 1", "th3": 0.181256, "th4": 0.241481, "th5": 0.21802, "th6": 0.252546, "th7": 0.275441},
-      {"vùng": "Miền Bắc 2", "th3": 0.251768, "th4": 0.306773, "th5": 0.237463, "th6": 0.288889, "th7": 0.280061},
-      {"vùng": "Miền Đông", "th3": 0, "th4": 0, "th5": 0, "th6": 0, "th7": 0.151024},
-      {"vùng": "Miền Tây", "th3": 0.181445, "th4": 0.323711, "th5": 0.238245, "th6": 0.319182, "th7": 0.365854},
-      {"vùng": "Miền Trung", "th3": 0.026591, "th4": 0.037197, "th5": 0.029335, "th6": 0.040622, "th7": 0.04698}
-    ],
-    "tot": {"vùng": "Tổng", "th3": 0.05489, "th4": 0.06904, "th5": 0.053255, "th6": 0.070764, "th7": 0.084956}
-  },
-  vuong: {
-    "rows": [
-      {"vùng": "Hà Nội", "w27": 54, "w28": 55, "w29": 48, "w30": 47, "tổng": 204, "bán_w30": 1925, "tỉ_lệ": 0.024416},
-      {"vùng": "Hồ Chí Minh", "w27": 94, "w28": 100, "w29": 115, "w30": 112, "tổng": 421, "bán_w30": 1290, "tỉ_lệ": 0.086822},
-      {"vùng": "Miền Bắc 1", "w27": 71, "w28": 58, "w29": 61, "w30": 64, "tổng": 254, "bán_w30": 216, "tỉ_lệ": 0.296296},
-      {"vùng": "Miền Bắc 2", "w27": 45, "w28": 53, "w29": 56, "w30": 60, "tổng": 214, "bán_w30": 221, "tỉ_lệ": 0.271493},
-      {"vùng": "Miền Đông", "w27": 0, "w28": 57, "w29": 52, "w30": 68, "tổng": 177, "bán_w30": 367, "tỉ_lệ": 0.185286},
-      {"vùng": "Miền Tây", "w27": 45, "w28": 63, "w29": 49, "w30": 52, "tổng": 209, "bán_w30": 158, "tỉ_lệ": 0.329114},
-      {"vùng": "Miền Trung", "w27": 23, "w28": 27, "w29": 29, "w30": 45, "tổng": 124, "bán_w30": 686, "tỉ_lệ": 0.065598}
-    ],
-    "rows2": [{"vùng": "Tổng", "w27": 332, "w28": 413, "w29": 410, "w30": 448, "tổng": 1603, "bán_w30": 4863, "tỉ_lệ": 0.092124}]
-  },
-  asm: [],
-  vungList: ["Hà Nội", "Hồ Chí Minh", "Miền Bắc 1", "Miền Bắc 2", "Miền Đông", "Miền Tây", "Miền Trung"]
-};
-
-// ============================================================
-// UTILITY FUNCTIONS
-// ============================================================
-const pct = (n, b) => b ? n / b : 0;
-const pStr = v => (v == null || isNaN(v)) ? '—' : (v * 100).toFixed(2) + '%';
-const fmtN = v => (v == null || isNaN(v)) ? '—' : v.toLocaleString('vi-VN');
-const wCls = v => v > 0 ? 'up' : v < 0 ? 'dn' : '';
-const wSym = v => v > 0 ? '▲' : v < 0 ? '▼ ' : '';
-const escHtml = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-let D = Object.assign({}, FULL_DATA);
-const sortState = {};
-
-// ============================================================
-// GITHUB FETCH
-// ============================================================
-function ghRawUrl(owner, repo, branch, path) {
-  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
-}
-
-async function fetchFromGitHub() {
-  const { owner, repo, branch, latestJsonPath, dataFolder } = GITHUB_CONFIG;
-  const statusEl = document.getElementById('ghStatus');
-
-  try {
-    statusEl.textContent = '📡 Đang tải latest.json…';
-    const jResp = await fetch(ghRawUrl(owner, repo, branch, latestJsonPath) + '?t=' + Date.now());
-    if (!jResp.ok) throw new Error(`latest.json không tìm thấy (HTTP ${jResp.status}). Kiểm tra GITHUB_CONFIG hoặc file latest.json trên GitHub.`);
-
-    const config = await jResp.json();
-    const latestWeek = config.latest || '?';
-    const dataFile = config.file;
-
-    if (!dataFile) throw new Error('latest.json thiếu trường "file".');
-
-    const dataPath = dataFolder ? `${dataFolder}/${dataFile}` : dataFile;
-    const dataUrl = ghRawUrl(owner, repo, branch, dataPath) + '?t=' + Date.now();
-
-    statusEl.textContent = `📡 Đang tải ${dataFile}…`;
-    const dResp = await fetch(dataUrl);
-    if (!dResp.ok) throw new Error(`File dữ liệu không tìm thấy: ${dataFile} (HTTP ${dResp.status})`);
-
-    const buf = await dResp.arrayBuffer();
-    statusEl.textContent = `⚙️ Đang xử lý dữ liệu ${latestWeek}…`;
-    const wb = XLSX.read(buf, { type: 'array' });
-    D = processWB(wb);
-
-    statusEl.textContent = `✅ Đã tải: ${dataFile}`;
-    document.getElementById('st').textContent = `${dataFile} — Tuần ${latestWeek}`;
-    refreshAll();
-
-  } catch (err) {
-    console.error('Lỗi fetch GitHub:', err);
-    statusEl.textContent = '⚠️ Lỗi kết nối — dùng dữ liệu mẫu';
-    document.getElementById('st').textContent = 'Lỗi: ' + err.message + ' (dùng dữ liệu mẫu)';
-    D = Object.assign({}, FULL_DATA);
-    refreshAll();
-  }
-}
-
-// ============================================================
-// LOCAL FILE UPLOAD
-// ============================================================
-document.getElementById('fi').addEventListener('change', e => {
-  if (!e.target.files[0]) return;
-  const f = e.target.files[0];
-  document.getElementById('st').textContent = 'Đang xử lý…';
-  const r = new FileReader();
-  r.onload = ev => {
-    try {
-      const wb = XLSX.read(ev.target.result, { type: 'array' });
-      D = processWB(wb);
-      document.getElementById('st').textContent = '✓ ' + f.name;
-      document.getElementById('ghStatus').textContent = '📂 Dữ liệu cục bộ';
-      refreshAll();
-    } catch (err) { alert('Lỗi: ' + err.message); }
-  };
-  r.readAsArrayBuffer(f);
-});
-
-// ============================================================
-// DOM INIT
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.tab').forEach(t => {
-    t.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-      document.querySelectorAll('.pane').forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      document.getElementById(t.dataset.p).classList.add('active');
-      requestAnimationFrame(resizeCharts);
-    });
-  });
-
-  document.getElementById('fVung').addEventListener('change', renderMain);
-  document.getElementById('fAV').addEventListener('change', () => { fillAA(); renderAsm(); });
-  document.getElementById('fAA').addEventListener('change', renderAsm);
-  document.getElementById('fAS').addEventListener('input', renderAsm);
-
-  document.querySelectorAll('th[data-col]').forEach(th => {
-    th.addEventListener('click', () => {
-      const col = th.dataset.col;
-      const tbl = th.dataset.tbl;
-      const type = th.dataset.type || 's';
-      if (!sortState[tbl] || sortState[tbl].col !== col) sortState[tbl] = { col, dir: 'asc', type };
-      else sortState[tbl].dir = sortState[tbl].dir === 'asc' ? 'desc' : 'asc';
-      document.querySelectorAll(`#${tbl} th[data-col]`).forEach(x => {
-        x.classList.remove('sort-asc', 'sort-desc');
-        const arr = x.querySelector('.arr');
-        if (arr) arr.textContent = '';
-      });
-      th.classList.add(sortState[tbl].dir === 'asc' ? 'sort-asc' : 'sort-desc');
-      const arr = th.querySelector('.arr');
-      if (arr) arr.textContent = sortState[tbl].dir === 'asc' ? '▲' : '▼';
-      if (tbl === 'tblMain') renderMain();
-      else if (tbl === 'tblLuy') renderLuyKe();
-      else if (tbl === 'tblVuong') renderVuong();
-      else if (tbl === 'tblAsm') renderAsm();
-    });
-  });
-
-  window.addEventListener('resize', () => requestAnimationFrame(resizeCharts));
-
-  refreshAll();
-  fetchFromGitHub();
-});
-
-// ============================================================
-// REFRESH ALL
-// ============================================================
-function refreshAll() {
-  renderKpi();
-  fillFltV(); renderMain();
+function renderAll() {
+  if (!DATA || !DATA.kpi) return;
+  renderKPI();
+  renderBarChart();
+  buildFilters();
+  renderMain(DATA.main_rows);
   renderLuyKe();
-  fillFltA(); renderVuong(); renderAsm();
-  requestAnimationFrame(resizeCharts);
-  document.getElementById('meta').textContent = 'Dữ liệu F.Plus — Generated ' + new Date().toLocaleString('vi-VN');
+  filterVuong();
+  filterAsm();
+  filterShop();
 }
 
-// ============================================================
-// CHARTS
-// ============================================================
-function resizeCharts() {
-  drawBar('cNhan', D.main.map(r => r.vùng), [
-    { label: 'W27', data: D.main.map(r => r.w27), color: '#9ecae1' },
-    { label: 'W28', data: D.main.map(r => r.w28), color: '#6baed6' },
-    { label: 'W29', data: D.main.map(r => r.w29), color: '#4292c6' },
-    { label: 'W30', data: D.main.map(r => r.w30), color: '#1F3864' },
-  ]);
-  drawLine('cTyLe', D.main.map(r => r.vùng), D.main.map(r => r.wow_p));
+function renderKPI() {
+  const k = DATA.kpi;
+  const wCur = k.w_cur, wPrv = k.w_prv;
+  document.getElementById('kpi-w-cur').textContent = wCur;
+  document.getElementById('kpi-w2').textContent = wCur;
+  document.getElementById('kpi-w3').textContent = wCur;
+
+  document.getElementById('kpi-n').textContent = k.n_cur.toLocaleString();
+  const nSub = document.getElementById('kpi-n-sub');
+  nSub.textContent = (k.wow_n >= 0 ? '+' : '') + k.wow_n + ' so ' + wPrv;
+  nSub.className = 'sub ' + (k.wow_n >= 0 ? 'up' : 'dn');
+
+  document.getElementById('kpi-ban').textContent = k.ban_svt_cur.toLocaleString();
+
+  document.getElementById('kpi-ti').textContent = (k.ti_le_cur * 100).toFixed(2) + '%';
+  const tiSub = document.getElementById('kpi-ti-sub');
+  tiSub.textContent = (k.wow_ti_le >= 0 ? '+' : '') + (k.wow_ti_le * 100).toFixed(2) + '% so ' + wPrv;
+  tiSub.className = 'sub ' + (k.wow_ti_le >= 0 ? 'up' : 'dn');
 }
 
-function renderKpi() {
-  const k = D.kpi;
-  document.getElementById('kpi').innerHTML =
-    '<div class="card">' +
-      '<div class="lbl">Phiếu nhận</div>' +
-      '<div class="vals"><span class="w29">' + fmtN(k.n_w29) + '</span><span class="arr">→</span><span class="w30">' + fmtN(k.n_w30) + '</span></div>' +
-      '<div class="sub ' + wCls(k.wow_n) + '">' + wSym(k.wow_n) + ' ' + fmtN(Math.abs(k.wow_n)) + ' phiếu so tuần trước</div>' +
-    '</div>' +
-    '<div class="card">' +
-      '<div class="lbl">Volume bán (Shop vệ tinh)</div>' +
-      '<div class="vals"><span class="w29">' + fmtN(k.b_w29) + '</span><span class="arr">→</span><span class="w30">' + fmtN(k.b_w30) + '</span></div>' +
-      '<div class="sub">Tỉ lệ: ' + pStr(k.tỉ_w29) + ' → ' + pStr(k.tỉ_w30) + '</div>' +
-    '</div>' +
-    '<div class="card">' +
-      '<div class="lbl">Tỉ lệ khai thác</div>' +
-      '<div class="vals"><span class="w29">' + pStr(k.tỉ_w29) + '</span><span class="arr">→</span><span class="w30">' + pStr(k.tỉ_w30) + '</span></div>' +
-      '<div class="sub ' + wCls(k.wow_p) + '">' + wSym(k.wow_p) + ' ' + (k.wow_p * 100).toFixed(2) + 'pp so tuần trước</div>' +
-    '</div>';
-}
+function renderBarChart() {
+  const canvas = document.getElementById('barChart');
+  if (!canvas || !DATA || !DATA.weeks) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.parentElement.offsetWidth;
+  canvas.width = w;
 
-function drawBar(id, labels, series) {
-  const c = document.getElementById(id);
-  if (!c) return;
-  const ctx = c.getContext('2d');
-  const W = c.parentElement.offsetWidth - 24;
-  const H = 280;
-  c.width = W; c.height = H;
-  c.style.width = W + 'px'; c.style.height = H + 'px';
-  const P = { l: 50, r: 18, t: 60, b: 48 };
-  const cw = W - P.l - P.r, ch = H - P.t - P.b;
-  const n = labels.length;
-  const bw = (cw / n) * 0.78;
-  const gs = bw / series.length;
-  const maxV = Math.max(...series.map(s => Math.max(...s.data, 1)));
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#888'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'right';
-  for (let i = 0; i <= 4; i++) {
-    const v = Math.round(maxV * i / 4);
-    const y = P.t + ch - (v / maxV) * ch;
-    ctx.fillText(v, P.l - 3, y + 3);
-    ctx.beginPath(); ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
-    ctx.moveTo(P.l, y); ctx.lineTo(P.l + cw, y); ctx.stroke();
-  }
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < series.length; j++) {
-      const v = series[j].data[i];
-      const bh = (v / maxV) * ch;
-      const bx = P.l + i * (cw / n) + ((cw / n) - bw) / 2 + j * gs;
-      ctx.fillStyle = series[j].color;
-      ctx.fillRect(bx, P.t + ch - bh, gs - 2, bh);
-      if (j === series.length - 1 && v > 0) {
-        ctx.fillStyle = '#333'; ctx.font = '9px Segoe UI'; ctx.textAlign = 'center';
-        ctx.fillText(v, bx + gs / 2 - 1, P.t + ch - bh - 2);
-      }
-    }
-    ctx.fillStyle = '#555'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'center';
-    ctx.fillText(labels[i], P.l + i * (cw / n) + cw / n / 2, P.t + ch + 14);
-  }
-  let lx = P.l + 4, ly = 18;
-  for (const s of series) {
-    ctx.fillStyle = s.color; ctx.fillRect(lx, ly, 10, 10);
-    ctx.fillStyle = '#555'; ctx.font = '11px Segoe UI'; ctx.textAlign = 'left';
-    ctx.fillText(s.label, lx + 13, ly + 9);
-    lx += 52;
-  }
-}
+  const weeks = DATA.weeks;
+  const regions = DATA.main_rows || [];
+  const colors = ['#8EB4E6', '#5C90D2', '#336FBC', '#1250A2'];
 
-function drawLine(id, labels, data) {
-  const c = document.getElementById(id);
-  if (!c) return;
-  const ctx = c.getContext('2d');
-  const W = c.parentElement.offsetWidth - 24;
-  const H = 280;
-  c.width = W; c.height = H;
-  c.style.width = W + 'px'; c.style.height = H + 'px';
-  const P = { l: 60, r: 18, t: 30, b: 48 };
-  const cw = W - P.l - P.r, ch = H - P.t - P.b;
-  const n = labels.length;
-  const mx = Math.max(...data.map(Math.abs), 0.05);
-  ctx.clearRect(0, 0, W, H);
-  const zy = P.t + ch / 2;
-  ctx.fillStyle = '#888'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'right';
-  ctx.fillText('+' + (mx * 100).toFixed(1) + 'pp', P.l - 4, P.t + 8);
-  ctx.fillText('0', P.l - 4, zy + 3);
-  ctx.fillText('-' + (mx * 100).toFixed(1) + 'pp', P.l - 4, P.t + ch + 3);
-  ctx.beginPath(); ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
-  ctx.moveTo(P.l, zy); ctx.lineTo(P.l + cw, zy); ctx.stroke();
-  ctx.strokeStyle = '#f0f0f0';
-  for (let i = 0; i <= 3; i++) {
-    const y = P.t + ch * i / 3;
-    ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(P.l + cw, y); ctx.stroke();
-  }
-  ctx.beginPath(); ctx.strokeStyle = '#2E74B5'; ctx.lineWidth = 2;
-  for (let i = 0; i < n; i++) {
-    const x = P.l + i * (cw / (n - 1 || 1));
-    const y = P.t + ch - ((data[i] / mx + 1) / 2) * ch;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-  }
-  ctx.stroke();
-  for (let i = 0; i < n; i++) {
-    const x = P.l + i * (cw / (n - 1 || 1));
-    const y = P.t + ch - ((data[i] / mx + 1) / 2) * ch;
-    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2);
-    ctx.fillStyle = data[i] >= 0 ? '#1E8C4C' : '#C00000'; ctx.fill();
-    ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.fillStyle = '#555'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'center';
-    ctx.fillText(labels[i], x, P.t + ch + 14);
-  }
-}
+  const startX = 40, startY = 30, chartH = 220; 
+  canvas.height = chartH + 70;
+  ctx.clearRect(0, 0, w, chartH + 70);
 
-// ============================================================
-// TABLE HELPERS
-// ============================================================
-function mkCell(v, fmt) {
-  if (v == null || v === '') return '<span class="t-zero">—</span>';
-  if (typeof v === 'string') return escHtml(v);
-  if (fmt === 'pct') return '<span class="t-pct">' + (v === 0 ? '—' : pStr(v)) + '</span>';
-  if (fmt === 'wow_n') {
-    if (v > 0) return '<span class="t-pos">+' + v + '</span>';
-    if (v < 0) return '<span class="t-neg">' + v + '</span>';
-    return '<span class="t-zero">—</span>';
-  }
-  if (fmt === 'wow_p') {
-    const s = (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
-    return '<span class="' + (v >= 0 ? 't-pos' : 't-neg') + '">' + s + '</span>';
-  }
-  return fmtN(v);
-}
-
-function mkRow(r, cols) {
-  let html = '<tr>';
-  for (const col of cols) html += '<td>' + mkCell(r[col.key], col.fmt || '') + '</td>';
-  return html + '</tr>';
-}
-
-function mkTot(cols, tot) {
-  let html = '<tr class="tot">';
-  for (const col of cols) html += '<td>' + mkCell(tot[col.key], col.fmt || '') + '</td>';
-  return html + '</tr>';
-}
-
-function applySort(rows, tbl) {
-  const s = sortState[tbl];
-  if (!s) return rows;
-  const sorted = rows.slice();
-  sorted.sort((a, b) => {
-    const va = a[s.col], vb = b[s.col];
-    let cmp;
-    if (s.type === 'n') cmp = (va || 0) - (vb || 0);
-    else cmp = String(va || '').localeCompare(String(vb || ''), 'vi');
-    return s.dir === 'asc' ? cmp : -cmp;
+  let maxV = 0;
+  regions.forEach(r => {
+    weeks.forEach(wk => {
+      const v = r[wk.toLowerCase()] || 0;
+      if (v > maxV) maxV = v;
+    });
   });
-  return sorted;
+  maxV = Math.ceil(maxV / 50) * 50 || 50;
+  const chartW = w - startX - 10;
+
+  ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+  ctx.fillStyle = '#6b7280'; ctx.font = '11px Arial'; ctx.textAlign = 'right';
+  const ySteps = 5;
+  for (let i = 0; i <= ySteps; i++) {
+    const y = startY + chartH - (chartH * i / ySteps);
+    ctx.beginPath(); ctx.moveTo(startX, y); ctx.lineTo(startX + chartW, y); ctx.stroke();
+    ctx.fillText(Math.round(maxV * i / ySteps), startX - 8, y + 4);
+  }
+
+  ctx.strokeStyle = '#9ca3af';
+  ctx.beginPath(); ctx.moveTo(startX, startY + chartH); ctx.lineTo(startX + chartW, startY + chartH); ctx.stroke();
+
+  const groupW = chartW / regions.length;
+  const barW = (groupW * 0.7) / weeks.length;
+
+  regions.forEach((r, ri) => {
+    const groupX = startX + ri * groupW + (groupW - groupW * 0.7) / 2;
+    weeks.forEach((wk, wi) => {
+      const v = r[wk.toLowerCase()] || 0;
+      const barH = (v / maxV) * chartH;
+      const x = groupX + wi * barW;
+      const y = startY + chartH - barH;
+      ctx.fillStyle = colors[wi] || colors[colors.length-1];
+      ctx.fillRect(x, y, barW - 2, barH);
+      if (v > 0) {
+        ctx.fillStyle = '#374151'; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center';
+        ctx.fillText(v, x + barW / 2 - 1, y - 4);
+      }
+    });
+    ctx.fillStyle = '#111827'; ctx.font = '600 11px Arial'; ctx.textAlign = 'center';
+    ctx.fillText(r.vùng, startX + ri * groupW + groupW / 2, startY + chartH + 18);
+  });
+
+  const legendY = 12;
+  let legendX = startX + 20;
+  ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left';
+  weeks.forEach((wk, i) => {
+    ctx.fillStyle = colors[i] || colors[colors.length-1];
+    ctx.fillRect(legendX, legendY - 9, 14, 10);
+    ctx.fillStyle = '#374151';
+    ctx.fillText(wk, legendX + 18, legendY);
+    legendX += 70;
+  });
 }
 
-function makeBody(id, rows, cols, tot) {
-  const tb = document.querySelector('#' + id + ' tbody');
-  const sorted = applySort(rows, id);
-  tb.innerHTML = sorted.map(r => mkRow(r, cols)).join('') + (tot ? mkTot(cols, tot) : '');
+function buildFilters() {
+  const vungs = DATA.vùng_list || [];
+  const asms = DATA.asm_list || [];
+  const asmVungMap = {};
+  vungs.forEach(v => { asmVungMap[v.trim().toLowerCase()] = []; });
+  
+  (DATA.asm_rows || []).forEach(r => {
+    const vk = (r.vùng || '').trim().toLowerCase();
+    if (!asmVungMap[vk]) asmVungMap[vk] = [];
+    if (!asmVungMap[vk].includes(r.asm)) asmVungMap[vk].push(r.asm);
+  });
+  window._asmVungMap = asmVungMap;
+  window._allAsms = asms;
+
+  ['f-vung-main','f-vung-vuong','f-vung-asm','f-vung-shop'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Tất cả Vùng</option>';
+    vungs.forEach(v => { sel.innerHTML += '<option value="' + v + '">' + v + '</option>'; });
+  });
+
+  ['f-asm', 'f-asm-shop'].forEach(id => {
+    const asmSel = document.getElementById(id);
+    if (asmSel) {
+      asmSel.innerHTML = '<option value="">Tất cả ASM</option>';
+      asms.forEach(a => { asmSel.innerHTML += '<option value="' + a + '">' + a + '</option>'; });
+    }
+  });
 }
 
-function fillSelect(id, vals) {
-  document.getElementById(id).innerHTML =
-    '<option value="">Tất cả</option>' +
-    vals.map(v => '<option value="' + escHtml(v) + '">' + escHtml(v) + '</option>').join('');
+function onVungChange() {
+  const vSel = document.getElementById('f-vung-asm');
+  const aSel = document.getElementById('f-asm');
+  if (!vSel || !aSel) return;
+  const vKey = vSel.value.trim().toLowerCase();
+  aSel.innerHTML = '<option value="">Tất cả ASM</option>';
+  const list = vKey ? (window._asmVungMap[vKey] || []) : (window._allAsms || []);
+  list.forEach(a => { aSel.innerHTML += '<option value="' + a + '">' + a + '</option>'; });
+  filterAsm();
 }
 
-function fillFltV() { fillSelect('fVung', D.vungList); }
-function fillFltA() { fillSelect('fAV', D.vungList); fillAA(); }
-
-function fillAA() {
-  const fv = document.getElementById('fAV').value;
-  const asms = [...new Set((fv ? D.asm.filter(r => r.vùng === fv) : D.asm).map(r => r.asm))].sort();
-  fillSelect('fAA', asms);
+function pct(n, dec=2) {
+  if (typeof n !== 'number' || n === 0) return '—';
+  return (n * 100).toFixed(dec) + '%';
+}
+function deltaClass(v) {
+  if (v > 0) return 'cell-up';
+  if (v < 0) return 'cell-dn';
+  return 'cell-z';
+}
+function deltaSign(v) {
+  if (v > 0) return '▲ +' + Math.abs(v);
+  if (v < 0) return '▼ ' + v;
+  return '— 0';
+}
+function tiLeClass(v) {
+  return v >= 0.05 ? 'cell-green' : 'cell-orange';
+}
+function escAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// ============================================================
-// RENDER FUNCTIONS
-// ============================================================
-function renderMain() {
-  const fv = document.getElementById('fVung').value;
-  const rows = fv ? D.main.filter(r => r.vùng === fv) : D.main;
-  const k = D.kpi;
-  const cols = [
-    { key: 'vùng' },
-    { key: 'w27', fmt: 'n' }, { key: 'w28', fmt: 'n' }, { key: 'w29', fmt: 'n' }, { key: 'w30', fmt: 'n' },
-    { key: 'tổng', fmt: 'n' }, { key: 'wow_n', fmt: 'wow_n' }, { key: 'wow_p', fmt: 'wow_p' }
-  ];
-  const tot = fv ? null : {
-    vùng: 'Tổng',
-    w27: D.main.reduce((s, r) => s + r.w27, 0),
-    w28: D.main.reduce((s, r) => s + r.w28, 0),
-    w29: D.main.reduce((s, r) => s + r.w29, 0),
-    w30: D.main.reduce((s, r) => s + r.w30, 0),
-    tổng: D.main.reduce((s, r) => s + r.tổng, 0),
-    wow_n: k.wow_n, wow_p: k.wow_p
+function buildThead(tblId, headers, colKeys) {
+  const thead = document.getElementById('thead-' + tblId);
+  let html = '<tr>';
+  headers.forEach((h, i) => {
+    const isText = ['vùng', 'asm', 'shop'].includes(colKeys[i].toLowerCase());
+    const cls = isText ? 'txt-l' : '';
+    html += '<th class="' + cls + '" onclick="sortTbl(\'' + tblId + '\',' + i + ')" data-col="' + escAttr(colKeys[i]) + '">' + h + '</th>';
+  });
+  html += '</tr>';
+  thead.innerHTML = html;
+}
+
+function buildTbody(tblId, rows, totRow, cols, fmtFn) {
+  const tbody = document.getElementById('tbody-' + tblId);
+  let html = '';
+  rows.forEach(r => {
+    html += '<tr>';
+    cols.forEach((c, i) => {
+      const v = r[c];
+      const isText = ['vùng', 'asm', 'shop'].includes(c.toLowerCase());
+      const cls = isText ? 'txt-l' : '';
+      const val = fmtFn ? fmtFn(c, v, r) : (v || 0);
+      html += '<td class="' + cls + '">' + val + '</td>';
+    });
+    html += '</tr>';
+  });
+  if (totRow) {
+    html += '<tr class="tot">';
+    cols.forEach((c, i) => {
+      const v = totRow[c];
+      const isText = ['vùng', 'asm', 'shop'].includes(c.toLowerCase());
+      const cls = isText ? 'txt-l' : '';
+      const val = fmtFn ? fmtFn(c, v, totRow) : (v || 0);
+      html += '<td class="' + cls + '">' + val + '</td>';
+    });
+    html += '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+function sortTbl(tblId, colIdx) {
+  const tbody = document.getElementById('tbody-' + tblId);
+  const rows = Array.from(tbody.querySelectorAll('tr:not(.tot)'));
+  const head = document.getElementById('thead-' + tblId);
+  const ths = head.querySelectorAll('th');
+  const prev = sortState[tblId] || {};
+  ths.forEach(t => { t.classList.remove('sorted-asc','sorted-desc'); });
+  let dir = 'asc';
+  if (prev.col === colIdx) dir = prev.dir === 'asc' ? 'desc' : 'asc';
+  else dir = 'desc';
+  sortState[tblId] = { col: colIdx, dir };
+  ths[colIdx].classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+
+  const firstCell = rows[0] && rows[0].cells[colIdx];
+  const isNum = firstCell && !isNaN(parseFloat(firstCell.textContent.replace(/[^0-9.\-]/g,'')));
+
+  rows.sort((a, b) => {
+    const va = a.cells[colIdx].textContent.trim();
+    const vb = b.cells[colIdx].textContent.trim();
+    if (isNum) {
+      const na = parseFloat(va.replace(/[^0-9.\-]/g,'')) || 0;
+      const nb = parseFloat(vb.replace(/[^0-9.\-]/g,'')) || 0;
+      return dir === 'asc' ? na - nb : nb - na;
+    }
+    return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+  rows.forEach(r => tbody.insertBefore(r, tbody.querySelector('.tot')));
+}
+
+function renameTbl(el) {
+  const inp = document.createElement('input');
+  inp.value = el.textContent;
+  inp.style.cssText = 'border:1px solid #aaa; border-radius:3px; padding:4px 8px; font-size:14px; font-weight:600; color:var(--fpt-blue); width:300px; outline:none;';
+  inp.onblur = () => { el.textContent = inp.value || el.textContent; el.style.display = ''; inp.remove(); };
+  inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') { inp.value = el.dataset.orig || ''; inp.blur(); } };
+  inp.dataset.orig = el.textContent;
+  el.style.display = 'none';
+  el.parentNode.insertBefore(inp, el);
+  inp.focus();
+}
+
+function filterMain() {
+  if (!DATA) return;
+  const vF = document.getElementById('f-vung-main').value;
+  const rows = vF ? DATA.main_rows.filter(r => r.vùng === vF) : [].concat(DATA.main_rows);
+  renderMain(rows);
+}
+function renderMain(rows) {
+  const weeks = DATA.weeks;
+  const headers = ['Vùng'].concat(weeks).concat(['Tổng', 'SL Tăng/Giảm', 'Tỉ lệ tăng/giảm']);
+  const cols   = ['vùng'].concat(weeks.map(w => w.toLowerCase())).concat(['tổng', 'sl_tang_giam', 'ti_le_tang_giam']);
+  const fmtFn = (c, v) => {
+    if (c === 'ti_le_tang_giam') {
+      return '<span class="' + deltaClass(v) + '">' + (v >= 0 ? '+' : '') + (v*100).toFixed(2) + '%</span>';
+    }
+    if (c === 'sl_tang_giam') {
+      return '<span class="' + deltaClass(v) + '">' + deltaSign(v) + '</span>';
+    }
+    return v;
   };
-  makeBody('tblMain', rows, cols, tot);
+  buildThead('main', headers, cols);
+  buildTbody('main', rows, DATA.main_tot, cols, fmtFn);
 }
 
 function renderLuyKe() {
-  const cols = [
-    { key: 'vùng' },
-    { key: 'th3', fmt: 'pct' }, { key: 'th4', fmt: 'pct' }, { key: 'th5', fmt: 'pct' },
-    { key: 'th6', fmt: 'pct' }, { key: 'th7', fmt: 'pct' }
-  ];
-  makeBody('tblLuy', D.luyke.rows, cols, D.luyke.tot);
+  if (!DATA || !DATA.months) return;
+  const months = DATA.months;
+  const m_cur = months[months.length - 1];
+  const m_prv = months[months.length - 2];
+
+  let headers = ['Vùng'].concat(months.map(m => 'Th.' + m)).concat(['% Tăng/Giảm (Th.'+m_cur+' so Th.'+(m_prv||'')+')']);
+  let cols   = ['vùng'].concat(months.map(m => 'Th' + m)).concat(['tang_giam']);
+  
+  const fmtFn = (c, v) => {
+    if (c === 'tang_giam') return '<span class="' + deltaClass(v) + '">' + (v >= 0 ? '+' : '') + (v*100).toFixed(2) + '%</span>';
+    if (c === 'vùng') return v;
+    return pct(v);
+  };
+  buildThead('luyke', headers, cols);
+  buildTbody('luyke', DATA.luyke_rows, DATA.luyke_tot, cols, fmtFn);
 }
 
-function renderVuong() {
-  const cols = [
-    { key: 'vùng' },
-    { key: 'w27', fmt: 'n' }, { key: 'w28', fmt: 'n' }, { key: 'w29', fmt: 'n' }, { key: 'w30', fmt: 'n' },
-    { key: 'tổng', fmt: 'n' }, { key: 'bán_w30', fmt: 'n' }, { key: 'tỉ_lệ', fmt: 'pct' }
-  ];
-  makeBody('tblVuong', D.vuong.rows, cols, D.vuong.rows2 && D.vuong.rows2[0]);
+function filterVuong() {
+  if (!DATA) return;
+  const vF = document.getElementById('f-vung-vuong').value;
+  const rows = vF ? DATA.vuong_rows.filter(r => r.vùng === vF) : [].concat(DATA.vuong_rows);
+  const weeks = DATA.weeks;
+  const wCur = DATA.w_cur;
+  const headers = ['Vùng'].concat(weeks).concat(['Tổng', 'Phiếu bán ' + wCur, 'Tỉ lệ phiếu']);
+  const cols   = ['vùng'].concat(weeks.map(w => w.toLowerCase())).concat(['tổng', 'ban_w_cur', 'ti_le']);
+  const fmtFn = (c, v) => {
+    if (c === 'ti_le') return '<span class="' + tiLeClass(v) + '">' + pct(v) + '</span>';
+    return v;
+  };
+  buildThead('vuong', headers, cols);
+  buildTbody('vuong', rows, DATA.vuong_tot, cols, fmtFn);
 }
 
-function renderAsm() {
-  const fv = document.getElementById('fAV').value;
-  const fa = document.getElementById('fAA').value;
-  const fs = document.getElementById('fAS').value.toLowerCase();
-  let rows = D.asm;
-  if (fv) rows = rows.filter(r => r.vùng === fv);
-  if (fa) rows = rows.filter(r => r.asm === fa);
-  if (fs) rows = rows.filter(r => (r.shop || '').toLowerCase().includes(fs));
-  const cols = [
-    { key: 'asm' }, { key: 'vùng' }, { key: 'shop' },
-    { key: 'w27', fmt: 'n' }, { key: 'w28', fmt: 'n' }, { key: 'w29', fmt: 'n' }, { key: 'w30', fmt: 'n' },
-    { key: 'bán_w30', fmt: 'n' }, { key: 'tỉ_lệ', fmt: 'pct' }
-  ];
-  const tot = rows.length ? {
-    asm: 'Tổng (' + rows.length + ' shops)', vùng: '', shop: '',
-    w27: rows.reduce((s, r) => s + r.w27, 0), w28: rows.reduce((s, r) => s + r.w28, 0),
-    w29: rows.reduce((s, r) => s + r.w29, 0), w30: rows.reduce((s, r) => s + r.w30, 0),
-    bán_w30: rows.reduce((s, r) => s + r.bán_w30, 0),
-    tỉ_lệ: rows.reduce((s, r) => s + r.w30, 0) / Math.max(1, rows.reduce((s, r) => s + r.bán_w30, 0))
-  } : null;
-  makeBody('tblAsm', rows, cols, tot);
+function filterAsm() {
+  if (!DATA) return;
+  const vF = document.getElementById('f-vung-asm').value;
+  const aF = document.getElementById('f-asm').value;
+  const sF = (document.getElementById('f-shop') || {}).value || '';
+  let rows = [].concat(DATA.asm_rows);
+
+  if (vF) rows = rows.filter(r => r.vùng === vF);
+  if (aF) rows = rows.filter(r => r.asm === aF);
+  if (sF) {
+    const sf = sF.trim().toLowerCase();
+    const matchAsms = (DATA.shop_rows || []).filter(sr => (sr.shop || '').toLowerCase().includes(sf)).map(sr => sr.asm);
+    rows = rows.filter(r => matchAsms.includes(r.asm));
+  }
+  
+  const w_cur = DATA.w_cur;
+  const w_prv = DATA.w_prv;
+  const headers = ['ASM','Vùng', w_prv, w_cur,'Tăng/Giảm','SL bán ' + w_cur,'Tỉ lệ'];
+  const cols   = ['asm','vùng', w_prv.toLowerCase(), w_cur.toLowerCase(),'tang_giam','ban_w_cur','ti_le'];
+  const fmtFn = (c, v) => {
+    if (c === 'tang_giam') return '<span class="' + deltaClass(v) + '">' + deltaSign(v) + '</span>';
+    if (c === 'ti_le') return '<span class="' + tiLeClass(v) + '">' + pct(v) + '</span>';
+    return v;
+  };
+  buildThead('asm', headers, cols);
+  
+  const tot = { asm:'Tổng', vùng:'', tang_giam: 0, ban_w_cur: 0, ti_le: 0 };
+  tot[w_prv.toLowerCase()] = 0;
+  tot[w_cur.toLowerCase()] = 0;
+  rows.forEach(r => {
+    tot[w_prv.toLowerCase()] += r[w_prv.toLowerCase()]||0;
+    tot[w_cur.toLowerCase()] += r[w_cur.toLowerCase()]||0;
+    tot.tang_giam += r.tang_giam||0;
+    tot.ban_w_cur += r.ban_w_cur||0;
+  });
+  tot.ti_le = tot.ban_w_cur > 0 ? tot[w_cur.toLowerCase()] / tot.ban_w_cur : 0;
+  buildTbody('asm', rows, tot, cols, fmtFn);
 }
 
-// ============================================================
-// PROCESS WORKBOOK
-// ============================================================
-function processWB(wb) {
-  const sh = {};
-  for (const n of wb.SheetNames) sh[n] = XLSX.utils.sheet_to_json(wb.Sheets[n], { defval: '' });
+function filterShop() {
+  if (!DATA) return;
+  const loaiF = document.getElementById('f-loai-shop').value;
+  const vF = document.getElementById('f-vung-shop').value;
+  const aF = document.getElementById('f-asm-shop').value;
+  const sF = (document.getElementById('f-shop-txt') || {}).value || '';
 
-  const VU = ['Hà Nội', 'Hồ Chí Minh', 'Miền Bắc 1', 'Miền Bắc 2', 'Miền Đông', 'Miền Tây', 'Miền Trung'];
-  const MO = [3, 4, 5, 6, 7];
+  let rows = [].concat(DATA.shop_rows || []);
+  if (loaiF === 'svt') rows = rows.filter(r => r.svt === true);
+  else if (loaiF === 'khong') rows = rows.filter(r => r.svt === false);
+  
+  if (vF) rows = rows.filter(r => r.vùng === vF);
+  if (aF) rows = rows.filter(r => r.asm === aF);
+  if (sF) {
+    const sf = sF.trim().toLowerCase();
+    rows = rows.filter(r => (r.shop || '').toLowerCase().includes(sf) || (r.asm || '').toLowerCase().includes(sf));
+  }
+  
+  const weeks = DATA.weeks;
+  const headers = ['ASM','Vùng','Shop'].concat(weeks).concat(['Phiếu bán ' + DATA.w_cur, 'Tỉ lệ']);
+  const cols   = ['asm','vùng','shop'].concat(weeks.map(w => w.toLowerCase())).concat(['ban_w_cur', 'ti_le']);
+  const fmtFn = (c, v) => {
+    if (c === 'ti_le') {
+      if (!v) return '<span class="cell-orange">—</span>';
+      return '<span class="' + tiLeClass(v) + '">' + pct(v) + '</span>';
+    }
+    return v;
+  };
+  buildThead('shop', headers, cols);
+  
+  const totW = weeks.map(w => 0);
+  let totBan = 0;
+  rows.forEach(r => {
+    weeks.forEach((w,i) => totW[i] += (r[w.toLowerCase()]||0));
+    totBan += (r.ban_w_cur||0);
+  });
+  const totTiLe = totBan > 0 ? totW[totW.length-1] / totBan : 0;
+  const tot = { asm:'Tổng', vùng:'', shop:'(' + rows.length + ' shops)', ban_w_cur: totBan, ti_le: totTiLe };
+  weeks.forEach((w,i) => { tot[w.toLowerCase()] = totW[i]; });
+  
+  buildTbody('shop', rows, tot, cols, fmtFn);
+}
 
-  const d1 = sh['Volume phiếu nhận'] || [];
-  const d2 = (sh['Volume bán'] || []).filter(r => r['Shop vệ tinh'] === 'Shop vệ tinh');
-  const dA = (sh['SL shop nhận máy F.Plus vùng'] || []).filter(r => r['Shop']);
+function switchTab(btn, id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(id).classList.add('active');
+  setTimeout(renderBarChart, 50);
+}
+window.addEventListener('resize', () => { if (DATA) renderBarChart(); });
 
-  const n_vw = {}, n_vm = {};
-  for (const v of VU) { n_vw[v] = {}; n_vm[v] = {}; }
-  for (const r of d1) {
-    const v = String(r['Vùng kinh doanh shop'] || '').trim();
-    const w = String(r['Tuần'] || '').trim();
-    const m = Number(r['Tháng']);
-    if (!VU.includes(v)) continue;
-    n_vw[v][w] = (n_vw[v][w] || 0) + 1;
-    if (!isNaN(m)) n_vm[v][m] = (n_vm[v][m] || 0) + 1;
+// ================= HÀM XỬ LÝ LÕI EXCEL TO DATA =================
+function processExcelBuffer(arrayBuffer) {
+  const wb = XLSX.read(arrayBuffer, {type: 'array'});
+  
+  const snNhan = wb.SheetNames.find(n => n.trim().toLowerCase() === 'volume phiếu nhận');
+  const snBan = wb.SheetNames.find(n => n.trim().toLowerCase() === 'volume bán');
+  const snDanhba = wb.SheetNames.find(n => n.trim().toLowerCase() === 'danhba');
+  const snSVT = wb.SheetNames.find(n => n.trim().toLowerCase() === 'shop vệ tinh');
+  
+  if (!snNhan || !snBan) {
+    throw new Error('File Excel thiếu sheet "Volume phiếu nhận" hoặc "Volume bán"!');
   }
 
-  const b_vw = {}, b_vm = {};
-  for (const v of VU) { b_vw[v] = {}; b_vm[v] = {}; }
-  for (const r of d2) {
-    const v = String(r['Vùng kinh doạnh'] || '').trim();
-    const w = String(r['Tuần'] || '').trim();
-    const m = Number(r['Tháng']);
-    if (!VU.includes(v)) continue;
-    b_vw[v][w] = (b_vw[v][w] || 0) + 1;
-    if (!isNaN(m)) b_vm[v][m] = (b_vm[v][m] || 0) + 1;
-  }
+  const wsNhan = wb.Sheets[snNhan];
+  const wsBan = wb.Sheets[snBan];
+  const wsDanhba = snDanhba ? wb.Sheets[snDanhba] : null;
 
-  const nW29 = VU.reduce((s, v) => s + (n_vw[v]['W29'] || 0), 0);
-  const nW30 = VU.reduce((s, v) => s + (n_vw[v]['W30'] || 0), 0);
-  const bW29 = VU.reduce((s, v) => s + (b_vw[v]['W29'] || 0), 0);
-  const bW30 = VU.reduce((s, v) => s + (b_vw[v]['W30'] || 0), 0);
-  const wow_n = nW30 - nW29;
-  const wow_p = pct(nW30, bW30) - pct(nW29, bW29);
+  const dataNhan = XLSX.utils.sheet_to_json(wsNhan, {defval: ""});
+  const dataBan = XLSX.utils.sheet_to_json(wsBan, {defval: ""});
+  const dataDanhba = wsDanhba ? XLSX.utils.sheet_to_json(wsDanhba, {defval: ""}) : [];
+  const dataSVT = snSVT ? XLSX.utils.sheet_to_json(wb.Sheets[snSVT], {defval: ""}) : [];
 
-  const main = VU.map(v => {
-    const w27 = n_vw[v]['W27'] || 0, w28 = n_vw[v]['W28'] || 0, w29 = n_vw[v]['W29'] || 0, w30 = n_vw[v]['W30'] || 0;
-    return {
-      vùng: v, w27, w28, w29, w30, tổng: w27 + w28 + w29 + w30,
-      wow_n: w30 - w29,
-      wow_p: pct(w30, b_vw[v]['W30'] || 0) - pct(w29, b_vw[v]['W29'] || 0)
-    };
+  const norm = (s) => (s||'').toString().trim();
+  
+  let svtSet = new Set();
+  dataSVT.forEach(r => {
+     let s = norm(r['Shop'] || r['Cửa hàng']);
+     if (s) svtSet.add(s);
   });
 
-  const lk_rows = VU.map(v => {
-    const row = { vùng: v };
-    for (const m of MO) row['th' + m] = pct(n_vm[v][m] || 0, b_vm[v][m] || 0);
-    return row;
-  });
-  const lk_tot = { vùng: 'Tổng' };
-  for (const m of MO) lk_tot['th' + m] = pct(
-    VU.reduce((s, v) => s + (n_vm[v][m] || 0), 0),
-    VU.reduce((s, v) => s + (b_vm[v][m] || 0), 0)
-  );
+  let shopToVung = {};
+  let shopToAsm = {};
+  let allAsms = new Set();
+  let allVungs = new Set();
 
-  const vuong = VU.map(v => {
-    const w27 = n_vw[v]['W27'] || 0, w28 = n_vw[v]['W28'] || 0, w29 = n_vw[v]['W29'] || 0, w30 = n_vw[v]['W30'] || 0;
-    const b30 = b_vw[v]['W30'] || 0;
-    return { vùng: v, w27, w28, w29, w30, tổng: w27 + w28 + w29 + w30, bán_w30: b30, tỉ_lệ: pct(w30, b30) };
+  dataDanhba.forEach(r => {
+    let loai = norm(r['Loại danh bạ']);
+    if (loai === 'Nhân viên khối cửa hàng (Shop)' || loai === 'Quản lý cửa hàng (Shop)') {
+      let s = norm(r['Cửa hàng']);
+      let v = norm(r['Vùng miền']);
+      let a = norm(r['Email ASM']);
+      if (v.toLowerCase() === 'loại') return; 
+      if (s) {
+        if (v) shopToVung[s] = v;
+        if (a) shopToAsm[s] = a;
+      }
+      if (v) allVungs.add(v);
+      if (a) allAsms.add(a);
+    }
   });
-  const vuong_tot = {
-    vùng: 'Tổng',
-    w27: VU.reduce((s, v) => s + (n_vw[v]['W27'] || 0), 0),
-    w28: VU.reduce((s, v) => s + (n_vw[v]['W28'] || 0), 0),
-    w29: VU.reduce((s, v) => s + (n_vw[v]['W29'] || 0), 0),
-    w30: nW30,
-    tổng: VU.reduce((s, v) => s + (n_vw[v]['W27'] || 0) + (n_vw[v]['W28'] || 0) + (n_vw[v]['W29'] || 0) + (n_vw[v]['W30'] || 0), 0),
-    bán_w30: bW30, tỉ_lệ: pct(nW30, bW30)
+
+  dataNhan.forEach(r => {
+    let s = norm(r['Cửa hàng']);
+    let v = norm(r['Vùng kinh doanh shop']);
+    if (v.toLowerCase() === 'loại') return; 
+    if (s && v && !shopToVung[s]) shopToVung[s] = v;
+    if (v) allVungs.add(v);
+  });
+
+  let weeksSet = new Set();
+  let monthsSet = new Set();
+
+  dataNhan.forEach(r => {
+    let w = norm(r['Tuần']).toUpperCase();
+    if (w && w.startsWith('W')) weeksSet.add(w);
+    let m = norm(r['Tháng']);
+    if (m) monthsSet.add(m);
+  });
+  dataBan.forEach(r => {
+    let w = norm(r['Tuần']).toUpperCase();
+    if (w && w.startsWith('W')) weeksSet.add(w);
+    let m = norm(r['Tháng']);
+    if (m) monthsSet.add(m);
+  });
+
+  let weeksArr = Array.from(weeksSet).sort((a,b) => (parseInt(a.replace(/[^0-9]/g,''))||0) - (parseInt(b.replace(/[^0-9]/g,''))||0));
+  let latestWeeks = weeksArr.slice(-4);
+  let w_cur = latestWeeks[latestWeeks.length - 1] || "";
+  let w_prv = latestWeeks[latestWeeks.length - 2] || "";
+  let monthsArr = Array.from(monthsSet).sort((a,b) => (parseInt(a.replace(/[^0-9]/g,''))||0) - (parseInt(b.replace(/[^0-9]/g,''))||0));
+
+  let vungStats = {};
+  let asmStats = {};
+  let shopStats = {};
+
+  allVungs.forEach(v => {
+    vungStats[v] = { nhan_all_w: {}, ban_svt_w: {}, nhan_all_m: {}, ban_svt_m: {} };
+    latestWeeks.forEach(wk => { vungStats[v].nhan_all_w[wk]=0; vungStats[v].ban_svt_w[wk]=0; });
+    monthsArr.forEach(m => { vungStats[v].nhan_all_m[m]=0; vungStats[v].ban_svt_m[m]=0; });
+  });
+
+  const getShopStat = (s) => {
+    if (!shopStats[s]) {
+       let v = shopToVung[s] || 'Khác';
+       let a = shopToAsm[s] || '';
+       shopStats[s] = { vung: v, asm: a, svt: svtSet.has(s), nhan_all_w: {}, ban_svt_cur: 0 };
+       latestWeeks.forEach(wk => shopStats[s].nhan_all_w[wk] = 0);
+    }
+    return shopStats[s];
+  };
+  
+  const getAsmStat = (a) => {
+    if (!asmStats[a]) {
+       let v = ''; for(let s in shopToAsm) { if(shopToAsm[s]===a) { v = shopToVung[s]; break; } }
+       asmStats[a] = { vung: v||'Khác', nhan_all_w: {}, ban_svt_cur: 0 };
+       latestWeeks.forEach(wk => asmStats[a].nhan_all_w[wk] = 0);
+    }
+    return asmStats[a];
   };
 
-  const sn = {};
-  for (const r of d1) {
-    const shop = String(r['Cửa hàng'] || '').trim();
-    const w = String(r['Tuần'] || '').trim();
-    if (!shop) continue;
-    if (!sn[shop]) sn[shop] = {};
-    sn[shop][w] = (sn[shop][w] || 0) + 1;
-  }
-  const sb = {};
-  for (const r of d2) {
-    const shop = String(r['Shop Name'] || '').trim();
-    const w = String(r['Tuần'] || '').trim();
-    if (!shop) continue;
-    if (!sb[shop]) sb[shop] = {};
-    sb[shop][w] = (sb[shop][w] || 0) + 1;
-  }
-  const asm = dA.map(r => {
-    const shop = String(r['Shop'] || '').trim();
-    const w27 = sn[shop]?.['W27'] || 0, w28 = sn[shop]?.['W28'] || 0, w29 = sn[shop]?.['W29'] || 0, w30 = sn[shop]?.['W30'] || 0;
-    const b30 = sb[shop]?.['W30'] || 0;
-    return { asm: String(r['ASM'] || '').trim(), vùng: String(r['Vùng'] || '').trim(), shop, w27, w28, w29, w30, bán_w30: b30, tỉ_lệ: pct(w30, b30) };
-  })
-    .filter(r => r.vùng && VU.includes(r.vùng))
-    .sort((a, b) => (a.asm || '').localeCompare(b.asm || '') || (a.vùng || '').localeCompare(b.vùng || '') || (a.shop || '').localeCompare(b.shop || ''));
+  let kpi_n_cur = 0, kpi_n_prv = 0;
+  
+  dataNhan.forEach(r => {
+    let s = norm(r['Cửa hàng']);
+    if (!s) return; 
+    let v = shopToVung[s] || norm(r['Vùng kinh doanh shop']);
+    if (v.toLowerCase() === 'loại') return; 
+    let a = shopToAsm[s] || '';
+    let w = norm(r['Tuần']).toUpperCase();
+    let m = norm(r['Tháng']);
 
-  return {
-    kpi: { n_w29: nW29, n_w30: nW30, b_w29: bW29, b_w30: bW30, tỉ_w29: pct(nW29, bW29), tỉ_w30: pct(nW30, bW30), wow_n, wow_p },
-    main, luyke: { rows: lk_rows, tot: lk_tot },
-    vuong: { rows: vuong, rows2: [vuong_tot] },
-    asm, vungList: VU
+    if (!vungStats[v]) { vungStats[v] = { nhan_all_w: {}, ban_svt_w: {}, nhan_all_m: {}, ban_svt_m: {} }; allVungs.add(v); }
+
+    if (m) vungStats[v].nhan_all_m[m] = (vungStats[v].nhan_all_m[m] || 0) + 1;
+    if (latestWeeks.includes(w)) {
+      vungStats[v].nhan_all_w[w] = (vungStats[v].nhan_all_w[w] || 0) + 1;
+      if (w === w_cur) kpi_n_cur++;
+      if (w === w_prv) kpi_n_prv++;
+      getShopStat(s).nhan_all_w[w] = (getShopStat(s).nhan_all_w[w] || 0) + 1;
+      if (a) getAsmStat(a).nhan_all_w[w] = (getAsmStat(a).nhan_all_w[w] || 0) + 1;
+    }
+  });
+
+  let kpi_ban_svt_cur = 0, kpi_ban_svt_prv = 0;
+  
+  dataBan.forEach(r => {
+    let s = norm(r['Shop Name'] || r['Cửa hàng']);
+    if (!s) return;
+    let isSVT = svtSet.has(s);
+    if (!isSVT) {
+        let rawSvt = norm(r['Shop vệ tinh']).toLowerCase();
+        if (rawSvt === 'shop vệ tinh' || rawSvt === 'svt' || rawSvt === 'có' || rawSvt === 'y') isSVT = true;
+    }
+    if (!isSVT) return; 
+
+    let v = shopToVung[s] || 'Khác';
+    if (v.toLowerCase() === 'loại') return; 
+    let a = shopToAsm[s] || '';
+    let w = norm(r['Tuần']).toUpperCase();
+    let m = norm(r['Tháng']);
+
+    if (!vungStats[v]) { vungStats[v] = { nhan_all_w: {}, ban_svt_w: {}, nhan_all_m: {}, ban_svt_m: {} }; allVungs.add(v); }
+    if (m) vungStats[v].ban_svt_m[m] = (vungStats[v].ban_svt_m[m] || 0) + 1;
+    if (latestWeeks.includes(w)) {
+      vungStats[v].ban_svt_w[w] = (vungStats[v].ban_svt_w[w] || 0) + 1;
+      if (w === w_cur) kpi_ban_svt_cur++;
+      if (w === w_prv) kpi_ban_svt_prv++;
+      if (w === w_cur) {
+        getShopStat(s).ban_svt_cur++;
+        getShopStat(s).svt = true;
+        if (a) getAsmStat(a).ban_svt_cur++;
+      }
+    }
+  });
+
+  let NEW_DATA = {
+    weeks: latestWeeks,
+    months: monthsArr,
+    w_cur: w_cur, w_prv: w_prv,
+    kpi: {
+      n_cur: kpi_n_cur, n_prv: kpi_n_prv, wow_n: kpi_n_cur - kpi_n_prv,
+      ban_svt_cur: kpi_ban_svt_cur, ban_svt_prv: kpi_ban_svt_prv,
+      ti_le_cur: kpi_ban_svt_cur > 0 ? kpi_n_cur / kpi_ban_svt_cur : 0,
+      ti_le_prv: kpi_ban_svt_prv > 0 ? kpi_n_prv / kpi_ban_svt_prv : 0,
+      w_cur: w_cur, w_prv: w_prv
+    },
+    vùng_list: Array.from(allVungs).filter(v => v !== 'Khác').sort(),
+    asm_list: Array.from(allAsms).sort()
   };
+  NEW_DATA.kpi.wow_ti_le = NEW_DATA.kpi.ti_le_cur - NEW_DATA.kpi.ti_le_prv;
+
+  let main_rows = [];
+  let main_tot = { vùng: 'Tổng', tổng: 0, sl_tang_giam: 0 };
+  latestWeeks.forEach(wk => main_tot[wk.toLowerCase()] = 0);
+  let tot_ban_cur = 0, tot_ban_prv = 0;
+
+  for (let v in vungStats) {
+    if (v === 'Khác' || !allVungs.has(v)) continue;
+    let st = vungStats[v], row = { vùng: v, tổng: 0 };
+    latestWeeks.forEach(wk => {
+       let val = st.nhan_all_w[wk] || 0;
+       row[wk.toLowerCase()] = val;
+       row.tổng += val;
+       main_tot[wk.toLowerCase()] += val;
+       main_tot.tổng += val;
+    });
+    let n_cur = st.nhan_all_w[w_cur] || 0, n_prv = st.nhan_all_w[w_prv] || 0;
+    let b_cur = st.ban_svt_w[w_cur] || 0,  b_prv = st.ban_svt_w[w_prv] || 0;
+    row.sl_tang_giam = n_cur - n_prv;
+    main_tot.sl_tang_giam += row.sl_tang_giam;
+    row.ti_le_tang_giam = (b_cur > 0 ? n_cur / b_cur : 0) - (b_prv > 0 ? n_prv / b_prv : 0);
+    tot_ban_cur += b_cur; tot_ban_prv += b_prv;
+    main_rows.push(row);
+  }
+  main_tot.ti_le_tang_giam = (tot_ban_cur > 0 ? main_tot[w_cur.toLowerCase()] / tot_ban_cur : 0) - (tot_ban_prv > 0 ? main_tot[w_prv.toLowerCase()] / tot_ban_prv : 0);
+  NEW_DATA.main_rows = main_rows.sort((a,b)=>a.vùng.localeCompare(b.vùng));
+  NEW_DATA.main_tot = main_tot;
+
+  let luyke_rows = [];
+  let luyke_tot = { vùng: 'Tổng', tang_giam: 0 };
+  monthsArr.forEach(m => luyke_tot['Th' + m] = 0);
+  let tot_n_m = {}, tot_b_m = {};
+  monthsArr.forEach(m => { tot_n_m[m] = 0; tot_b_m[m] = 0; });
+  let m_cur = monthsArr[monthsArr.length - 1], m_prv = monthsArr[monthsArr.length - 2];
+
+  for (let v in vungStats) {
+    if (v === 'Khác' || !allVungs.has(v)) continue;
+    let st = vungStats[v], row = { vùng: v };
+    monthsArr.forEach(m => {
+       let n = st.nhan_all_m[m] || 0, b = st.ban_svt_m[m] || 0;
+       row['Th' + m] = b > 0 ? n / b : 0;
+       tot_n_m[m] += n; tot_b_m[m] += b;
+    });
+    row.tang_giam = (row['Th' + m_cur] || 0) - (row['Th' + m_prv] || 0);
+    luyke_rows.push(row);
+  }
+  monthsArr.forEach(m => luyke_tot['Th' + m] = tot_b_m[m] > 0 ? tot_n_m[m] / tot_b_m[m] : 0);
+  luyke_tot.tang_giam = (luyke_tot['Th' + m_cur] || 0) - (luyke_tot['Th' + m_prv] || 0);
+  NEW_DATA.luyke_rows = luyke_rows.sort((a,b)=>a.vùng.localeCompare(b.vùng));
+  NEW_DATA.luyke_tot = luyke_tot;
+
+  let vuong_rows = [];
+  let vuong_tot = { vùng: 'Tổng', tổng: 0, ban_w_cur: 0 };
+  latestWeeks.forEach(wk => vuong_tot[wk.toLowerCase()] = 0);
+
+  for (let v in vungStats) {
+    if (v === 'Khác' || !allVungs.has(v)) continue;
+    let st = vungStats[v], row = { vùng: v, tổng: 0 };
+    latestWeeks.forEach(wk => {
+       let val = st.nhan_all_w[wk] || 0; 
+       row[wk.toLowerCase()] = val;
+       row.tổng += val;
+       vuong_tot[wk.toLowerCase()] += val;
+       vuong_tot.tổng += val;
+    });
+    row.ban_w_cur = st.ban_svt_w[w_cur] || 0;
+    row.ti_le = row.ban_w_cur > 0 ? (row[w_cur.toLowerCase()] || 0) / row.ban_w_cur : 0;
+    vuong_tot.ban_w_cur += row.ban_w_cur;
+    vuong_rows.push(row);
+  }
+  vuong_tot.ti_le = vuong_tot.ban_w_cur > 0 ? (vuong_tot[w_cur.toLowerCase()] || 0) / vuong_tot.ban_w_cur : 0;
+  NEW_DATA.vuong_rows = vuong_rows.sort((a,b)=>a.vùng.localeCompare(b.vùng));
+  NEW_DATA.vuong_tot = vuong_tot;
+
+  let asm_rows = [];
+  for (let a in asmStats) {
+    let st = asmStats[a], row = { asm: a, vùng: st.vung, ban_w_cur: st.ban_svt_cur };
+    let n_cur = st.nhan_all_w[w_cur] || 0, n_prv = st.nhan_all_w[w_prv] || 0;
+    row[w_prv.toLowerCase()] = n_prv;
+    row[w_cur.toLowerCase()] = n_cur;
+    row.tang_giam = n_cur - n_prv;
+    row.ti_le = row.ban_w_cur > 0 ? n_cur / row.ban_w_cur : 0;
+    asm_rows.push(row);
+  }
+  NEW_DATA.asm_rows = asm_rows.sort((a,b)=>a.asm.localeCompare(b.asm));
+
+  let shop_rows = [];
+  for (let s in shopStats) {
+    let st = shopStats[s], row = { shop: s, asm: st.asm, vùng: st.vung, svt: st.svt, tổng: 0, ban_w_cur: st.ban_svt_cur };
+    latestWeeks.forEach(wk => {
+       let val = st.nhan_all_w[wk] || 0;
+       row[wk.toLowerCase()] = val;
+       row.tổng += val;
+    });
+    let n_cur = row[w_cur.toLowerCase()] || 0;
+    row.ti_le = row.ban_w_cur > 0 ? n_cur / row.ban_w_cur : 0;
+    shop_rows.push(row);
+  }
+  NEW_DATA.shop_rows = shop_rows.sort((a,b)=>a.shop.localeCompare(b.shop));
+
+  DATA = NEW_DATA;
+  document.getElementById('loading-overlay').style.display = 'none';
+  renderAll();
 }
+
+// ================= HÀM KÉO DATA TỪ GOOGLE DRIVE =================
+async function loadDataFromDrive() {
+  document.getElementById('loading-overlay').style.display = 'block';
+  
+  // Link dữ liệu đã được cấp phép Publish to Web
+  const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTZGLwWIcCqTCAjVW0FyEQCQYvQ1MP3O5HRiFsQ6tZoN3DEDXq9ys59pXtNrTSA8w/pub?output=xlsx";
+  
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Network Error');
+    const arrayBuffer = await response.arrayBuffer();
+    processExcelBuffer(arrayBuffer);
+  } catch (error) {
+    console.error(error);
+    document.getElementById('loading-overlay').style.display = 'none';
+    alert('Không thể tải tự động từ Google Drive. Vui lòng tải file thủ công bằng nút phía trên.');
+  }
+}
+
+// Bắt sự kiện tải file thủ công (Dự phòng)
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('loading-overlay').style.display = 'block';
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      processExcelBuffer(evt.target.result);
+      e.target.value = ''; 
+    } catch(err) {
+      document.getElementById('loading-overlay').style.display = 'none';
+      alert('Đã xảy ra lỗi khi xử lý file Excel. Lỗi: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// Chạy hàm kéo dữ liệu tự động ngay khi tải xong trang web
+window.addEventListener('DOMContentLoaded', () => {
+    loadDataFromDrive();
+});
 </script>
 </body>
 </html>
