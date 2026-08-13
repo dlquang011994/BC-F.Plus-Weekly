@@ -26,7 +26,9 @@ body {
 }
 
 .report-wrapper {
-  max-width: 1200px; 
+  /* Giữ nguyên chiều ngang lớn để bảng hiển thị rộng rãi */
+  max-width: 1800px; 
+  width: 98%;
   margin: 0 auto;
   background: #ffffff;
   box-shadow: 0 10px 30px rgba(0,0,0,0.15);
@@ -71,7 +73,7 @@ body {
 .main-layout { display: flex; flex-grow: 1; }
 
 .sidebar { 
-  width: 230px; 
+  width: 260px; 
   background: var(--fpt-blue); 
   flex-shrink: 0;
   display: flex;
@@ -102,7 +104,7 @@ body {
   flex-grow: 1; 
   padding: 24px 30px; 
   background: var(--bg-body); 
-  width: calc(100% - 230px); 
+  width: calc(100% - 260px); 
 }
 
 .kpi-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
@@ -133,10 +135,11 @@ body {
   background: #fff; 
   border-radius: 6px; 
   padding: 20px; 
-  margin-bottom: 24px;
+  margin-bottom: 24px; /* Giữ nguyên khoảng cách hợp lệ với các bảng bên dưới */
   box-shadow: 0 2px 5px rgba(0,0,0,0.06); 
 }
 .chart-title { font-size: 14px; color: var(--text-main); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; }
+/* Thay đổi default height hiển thị canvas để tương ứng với JS */
 canvas#barChart { max-width: 100%; }
 
 .tbl-wrap { 
@@ -221,7 +224,7 @@ tr.tot:hover td { background: var(--fpt-blue) !important; }
 <div class="report-wrapper">
   
   <div class="header">
-    <h1>F.PLUS — Dashboard Khai Thác V2.0 (Live Sync)</h1>
+    <h1>F.PLUS — Dashboard Khai Thác V2.0 (Auto-Sync)</h1>
     <button class="btn-upload" onclick="document.getElementById('fileInput').click()">Dự phòng: Upload file</button>
     <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
   </div>
@@ -256,7 +259,7 @@ tr.tot:hover td { background: var(--fpt-blue) !important; }
 
         <div class="chart-box">
           <div class="chart-title">Phiếu nhận theo tuần</div>
-          <canvas id="barChart" height="100"></canvas>
+          <canvas id="barChart" height="400"></canvas>
         </div>
 
         <div class="tbl-wrap">
@@ -380,7 +383,8 @@ function renderBarChart() {
   const regions = DATA.main_rows || [];
   const colors = ['#8EB4E6', '#5C90D2', '#336FBC', '#1250A2'];
 
-  const startX = 40, startY = 30, chartH = 220; 
+  // Tăng mạnh chiều cao của biểu đồ để tránh bị lùn/bẹp dí
+  const startX = 40, startY = 30, chartH = 380; 
   canvas.height = chartH + 70;
   ctx.clearRect(0, 0, w, chartH + 70);
 
@@ -588,11 +592,44 @@ function filterMain() {
   const rows = vF ? DATA.main_rows.filter(r => r.vùng === vF) : [].concat(DATA.main_rows);
   renderMain(rows);
 }
+
 function renderMain(rows) {
+  if (!DATA) return;
   const weeks = DATA.weeks;
-  const headers = ['Vùng'].concat(weeks).concat(['Tổng', 'SL Tăng/Giảm', 'Tỉ lệ tăng/giảm']);
-  const cols   = ['vùng'].concat(weeks.map(w => w.toLowerCase())).concat(['tổng', 'sl_tang_giam', 'ti_le_tang_giam']);
+  const tot = DATA.main_tot;
+
+  rows.forEach(r => {
+    weeks.forEach(wk => {
+      const wKey = wk.toLowerCase();
+      r['pct_' + wKey] = tot[wKey] > 0 ? (r[wKey] || 0) / tot[wKey] : 0;
+    });
+    r['pct_tổng'] = tot.tổng > 0 ? (r.tổng || 0) / tot.tổng : 0;
+  });
+
+  weeks.forEach(wk => {
+    const wKey = wk.toLowerCase();
+    tot['pct_' + wKey] = tot[wKey] > 0 ? 1 : 0;
+  });
+  tot['pct_tổng'] = tot.tổng > 0 ? 1 : 0;
+
+  let headers = ['Vùng'];
+  let cols = ['vùng'];
+
+  weeks.forEach(wk => {
+    headers.push('Phiếu ' + wk);
+    cols.push(wk.toLowerCase());
+    
+    headers.push('Tỉ lệ ' + wk);
+    cols.push('pct_' + wk.toLowerCase());
+  });
+
+  headers.push('Tổng', 'Tỉ lệ Tổng', 'SL Tăng/Giảm', 'Tỉ lệ tăng/giảm');
+  cols.push('tổng', 'pct_tổng', 'sl_tang_giam', 'ti_le_tang_giam');
+
   const fmtFn = (c, v) => {
+    if (c.startsWith('pct_')) {
+      return (v * 100).toFixed(2) + '%';
+    }
     if (c === 'ti_le_tang_giam') {
       return '<span class="' + deltaClass(v) + '">' + (v >= 0 ? '+' : '') + (v*100).toFixed(2) + '%</span>';
     }
@@ -601,8 +638,9 @@ function renderMain(rows) {
     }
     return v;
   };
+
   buildThead('main', headers, cols);
-  buildTbody('main', rows, DATA.main_tot, cols, fmtFn);
+  buildTbody('main', rows, tot, cols, fmtFn);
 }
 
 function renderLuyKe() {
@@ -740,7 +778,7 @@ function processExcelBuffer(arrayBuffer) {
   const snSVT = wb.SheetNames.find(n => n.trim().toLowerCase() === 'shop vệ tinh');
   
   if (!snNhan || !snBan) {
-    throw new Error('File Excel thiếu sheet "Volume phiếu nhận" hoặc "Volume bán"!');
+    throw new Error('Thiếu sheet "Volume phiếu nhận" hoặc "Volume bán" trong file Drive!');
   }
 
   const wsNhan = wb.Sheets[snNhan];
@@ -1019,7 +1057,6 @@ function processExcelBuffer(arrayBuffer) {
 async function loadDataFromDrive() {
   document.getElementById('loading-overlay').style.display = 'block';
   
-  // Link dữ liệu đã được cấp phép Publish to Web
   const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTZGLwWIcCqTCAjVW0FyEQCQYvQ1MP3O5HRiFsQ6tZoN3DEDXq9ys59pXtNrTSA8w/pub?output=xlsx";
   
   try {
@@ -1034,7 +1071,6 @@ async function loadDataFromDrive() {
   }
 }
 
-// Bắt sự kiện tải file thủ công (Dự phòng)
 document.getElementById('fileInput').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -1052,7 +1088,6 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
   reader.readAsArrayBuffer(file);
 });
 
-// Chạy hàm kéo dữ liệu tự động ngay khi tải xong trang web
 window.addEventListener('DOMContentLoaded', () => {
     loadDataFromDrive();
 });
