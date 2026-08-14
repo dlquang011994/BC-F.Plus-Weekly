@@ -387,7 +387,6 @@ function renderComboChart() {
   if (!canvas || !DATA) return;
   const ctx = canvas.getContext('2d');
   
-  // Tự động chèn biến tuần để ra tên: "TỈ LỆ W33"
   document.getElementById('combo-chart-title').textContent = 'TỈ LỆ ' + DATA.w_cur;
 
   let cData = DATA.vuong_rows.map(r => ({
@@ -450,7 +449,7 @@ function renderComboChart() {
             anchor: 'end',
             color: '#6b7280',
             font: { size: 11 },
-            formatter: function(value) { return value.toLocaleString('en-US'); } // Hiển thị số comma
+            formatter: function(value) { return value.toLocaleString('en-US'); } 
           }
         },
         {
@@ -467,7 +466,7 @@ function renderComboChart() {
             anchor: 'end',
             color: '#6b7280',
             font: { size: 11 },
-            formatter: function(value) { return value.toLocaleString('en-US'); } // Hiển thị số comma
+            formatter: function(value) { return value.toLocaleString('en-US'); } 
           }
         }
       ]
@@ -490,7 +489,7 @@ function renderComboChart() {
               if (context.dataset.yAxisID === 'y1') {
                 label += (context.raw * 100).toFixed(2) + '%';
               } else {
-                label += context.raw.toLocaleString('en-US'); // Thêm dấu phân cách hàng nghìn vào tooltip
+                label += context.raw.toLocaleString('en-US'); 
               }
               return label;
             }
@@ -504,7 +503,7 @@ function renderComboChart() {
           position: 'left',
           title: { display: true, text: 'Shop bán and F.Plus nhận', color: '#6b7280', font: { weight: 'bold' } },
           ticks: {
-            callback: function(value) { return value.toLocaleString('en-US'); } // Format trục Y hiển thị số dấu phẩy
+            callback: function(value) { return value.toLocaleString('en-US'); } 
           },
           grid: { color: '#e5e7eb' }
         },
@@ -958,19 +957,21 @@ function processExcelBuffer(arrayBuffer) {
   let allAsms = new Set();
   let allVungs = new Set();
 
+  // ĐÃ GỠ BỎ ĐIỀU KIỆN "LOẠI DANH BẠ" TẠI ĐÂY
   dataDanhba.forEach(r => {
-    let loai = norm(r['Loại danh bạ']);
-    if (loai === 'Nhân viên khối cửa hàng (Shop)' || loai === 'Quản lý cửa hàng (Shop)') {
-      let s = norm(r['Cửa hàng']);
-      let v = norm(r['Vùng miền']);
-      let a = norm(r['Email ASM']);
-      if (v.toLowerCase() === 'loại') return; 
-      if (s) {
-        if (v) shopToVung[s] = v;
-        if (a) shopToAsm[s] = a;
+    let s = norm(r['Cửa hàng']);
+    let v = norm(r['Vùng miền']);
+    let a = norm(r['Email ASM']);
+    
+    if (s) {
+      if (v && v.toLowerCase() !== 'loại') {
+        shopToVung[s] = v;
+        allVungs.add(v);
       }
-      if (v) allVungs.add(v);
-      if (a) allAsms.add(a);
+      if (a) {
+        shopToAsm[s] = a;
+        allAsms.add(a);
+      }
     }
   });
 
