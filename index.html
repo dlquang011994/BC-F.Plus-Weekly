@@ -255,9 +255,8 @@ tr.tot:hover td { background: var(--fpt-blue) !important; }
           </div>
         </div>
 
-        <!-- NEW COMBO CHART -->
         <div class="chart-box">
-          <div class="chart-title" id="combo-chart-title">Tỉ lệ tuần hiện tại</div>
+          <div class="chart-title" id="combo-chart-title">TỈ LỆ</div>
           <div style="position: relative; height: 450px; width: 100%;">
             <canvas id="comboChart"></canvas>
           </div>
@@ -342,14 +341,13 @@ tr.tot:hover td { background: var(--fpt-blue) !important; }
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- Import Chart.js & Datalabels cho biểu đồ mới -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <script>
 let DATA = null;
 let sortState = {};
-let comboChartInstance = null; // Quản lý instance biểu đồ mới
+let comboChartInstance = null; 
 
 function renderAll() {
   if (!DATA || !DATA.kpi) return;
@@ -389,7 +387,8 @@ function renderComboChart() {
   if (!canvas || !DATA) return;
   const ctx = canvas.getContext('2d');
   
-  document.getElementById('combo-chart-title').textContent = 'Tỉ lệ ' + DATA.w_cur;
+  // Tự động chèn biến tuần để ra tên: "TỈ LỆ W33"
+  document.getElementById('combo-chart-title').textContent = 'TỈ LỆ ' + DATA.w_cur;
 
   let cData = DATA.vuong_rows.map(r => ({
     vung: r.vùng,
@@ -397,7 +396,6 @@ function renderComboChart() {
     nhan: r[DATA.w_cur.toLowerCase()] || 0,
     tile: r.ti_le || 0
   }));
-  // Sắp xếp ưu tiên hiển thị từ cao xuống thấp theo lượng Phiếu Bán
   cData.sort((a, b) => b.ban - a.ban);
 
   const labels = cData.map(d => d.vung);
@@ -452,7 +450,7 @@ function renderComboChart() {
             anchor: 'end',
             color: '#6b7280',
             font: { size: 11 },
-            formatter: function(value) { return (value / 1000).toFixed(1) + 'K'; }
+            formatter: function(value) { return value.toLocaleString('en-US'); } // Hiển thị số comma
           }
         },
         {
@@ -469,7 +467,7 @@ function renderComboChart() {
             anchor: 'end',
             color: '#6b7280',
             font: { size: 11 },
-            formatter: function(value) { return (value / 1000).toFixed(1) + 'K'; }
+            formatter: function(value) { return value.toLocaleString('en-US'); } // Hiển thị số comma
           }
         }
       ]
@@ -492,7 +490,7 @@ function renderComboChart() {
               if (context.dataset.yAxisID === 'y1') {
                 label += (context.raw * 100).toFixed(2) + '%';
               } else {
-                label += context.raw;
+                label += context.raw.toLocaleString('en-US'); // Thêm dấu phân cách hàng nghìn vào tooltip
               }
               return label;
             }
@@ -506,7 +504,7 @@ function renderComboChart() {
           position: 'left',
           title: { display: true, text: 'Shop bán and F.Plus nhận', color: '#6b7280', font: { weight: 'bold' } },
           ticks: {
-            callback: function(value) { return value >= 1000 ? value / 1000 + 'K' : value; }
+            callback: function(value) { return value.toLocaleString('en-US'); } // Format trục Y hiển thị số dấu phẩy
           },
           grid: { color: '#e5e7eb' }
         },
@@ -1026,6 +1024,11 @@ function processExcelBuffer(arrayBuffer) {
     return shopStats[s];
   };
   
+  // ĐỔ TOÀN BỘ SHOP TỪ DANH BẠ VÀO MẢNG TRƯỚC KHI TÍNH TOÁN
+  for (let s in shopToVung) {
+    getShopStat(s);
+  }
+  
   const getAsmStat = (a) => {
     if (!asmStats[a]) {
        let v = ''; for(let s in shopToAsm) { if(shopToAsm[s]===a) { v = shopToVung[s]; break; } }
@@ -1123,7 +1126,6 @@ function processExcelBuffer(arrayBuffer) {
     
     let n_cur = st.nhan_all_w[w_cur] || 0, n_prv = st.nhan_all_w[w_prv] || 0;
     
-    // Logic mới tính Tốc độ Tăng/Giảm của riêng Phiếu nhận giữa 2 tuần
     row.sl_tang_giam = n_cur - n_prv;
     main_tot.sl_tang_giam += row.sl_tang_giam;
     row.ti_le_tang_giam = n_prv > 0 ? (n_cur - n_prv) / n_prv : (n_cur > 0 ? 1 : 0);
@@ -1131,7 +1133,6 @@ function processExcelBuffer(arrayBuffer) {
     main_rows.push(row);
   }
   
-  // Tính Tốc độ Tăng/Giảm tổng cục bộ cho Phiếu nhận
   let tot_n_cur = main_tot[w_cur.toLowerCase()] || 0;
   let tot_n_prv = main_tot[w_prv.toLowerCase()] || 0;
   main_tot.ti_le_tang_giam = tot_n_prv > 0 ? (tot_n_cur - tot_n_prv) / tot_n_prv : (tot_n_cur > 0 ? 1 : 0);
