@@ -244,7 +244,7 @@ tr.tot:hover td { background: var(--fpt-blue) !important; }
             <div class="sub" id="kpi-n-sub">Đang đồng bộ...</div>
           </div>
           <div class="kpi-card">
-            <div class="label">Phiếu bán SVT <span id="kpi-w2"></span></div>
+            <div class="label">Phiếu bán shop <span id="kpi-w2"></span></div>
             <div class="value" id="kpi-ban">-</div>
             <div class="sub" id="kpi-ban-sub">Đang đồng bộ...</div>
           </div>
@@ -277,8 +277,9 @@ tr.tot:hover td { background: var(--fpt-blue) !important; }
           <div style="font-size: 13px; color: #4b5563; padding: 12px 20px 4px 20px; line-height: 1.6; background: #f9fafb; border-bottom: 1px solid var(--border-color);">
             <ul style="margin-left: 20px;">
               <li><strong>Phiếu theo tuần:</strong> Tổng phiếu nhận vào của tuần</li>
-              <li><strong>Tỉ lệ:</strong> Tổng phiếu nhận vào của tuần / tổng máy bán ra của tuần (Phân loại F.Plus có thể xử lý)</li>
-              <li><strong>Tỉ lệ tăng/Giảm:</strong> So sánh giữa 2 tuần mới nhất</li>
+              <li><strong>Tỉ lệ tuần:</strong> Tổng phiếu nhận vào của tuần / tổng máy bán ra của tuần (Phân loại F.Plus có thể xử lý)</li>
+              <li><strong>SL tăng/Giảm:</strong> Phiếu nhận vào chênh lệch giữa 2 tuần mới nhất</li>
+              <li><strong>Tỉ lệ tăng/Giảm:</strong> Tỉ lệ chênh lệch giữa 2 tuần mới nhất</li>
             </ul>
           </div>
           <div class="table-responsive">
@@ -299,7 +300,7 @@ tr.tot:hover td { background: var(--fpt-blue) !important; }
       <div id="tab2" class="tab-content">
         <div class="tbl-wrap">
           <div class="tbl-header">
-            <span class="tbl-name" ondblclick="renameTbl(this)">Phiếu nhận 4 tuần gần nhất theo Vùng (SVT)</span>
+            <span class="tbl-name" ondblclick="renameTbl(this)">Phiếu nhận 4 tuần gần nhất theo Vùng</span>
             <div class="tbl-filters">
               <select id="f-vung-vuong" onchange="filterVuong()"><option value="">Tất cả Vùng</option></select>
             </div>
@@ -520,10 +521,12 @@ function renderComboChart() {
           position: 'right',
           title: { display: true, text: 'Tỉ lệ', color: '#6b7280', font: { weight: 'bold' } },
           grid: { drawOnChartArea: false },
+          min: 0,
+          suggestedMax: 0.20,
           ticks: {
+            stepSize: 0.05, 
             callback: function(value) { return (value * 100).toFixed(0) + '%'; }
-          },
-          min: 0
+          }
         },
         x: { grid: { display: false } }
       }
@@ -757,18 +760,26 @@ function renderMain(rows) {
   const tot = DATA.main_tot;
 
   rows.forEach(r => {
+    let totalBan = 0;
     weeks.forEach(wk => {
       const wKey = wk.toLowerCase();
-      r['pct_' + wKey] = tot[wKey] > 0 ? (r[wKey] || 0) / tot[wKey] : 0;
+      const vuongRow = DATA.vuong_rows.find(vr => vr.vùng === r.vùng) || {};
+      const banW = vuongRow['ban_' + wKey] || 0;
+      totalBan += banW;
+      r['pct_' + wKey] = banW > 0 ? (r[wKey] || 0) / banW : 0;
     });
-    r['pct_tổng'] = tot.tổng > 0 ? (r.tổng || 0) / tot.tổng : 0;
+    r['pct_tổng'] = totalBan > 0 ? (r.tổng || 0) / totalBan : 0;
   });
 
+  let grandTotalBan = 0;
   weeks.forEach(wk => {
     const wKey = wk.toLowerCase();
-    tot['pct_' + wKey] = tot[wKey] > 0 ? 1 : 0;
+    const totalBanW = DATA.vuong_rows.reduce((sum, vr) => sum + (vr['ban_' + wKey] || 0), 0);
+    grandTotalBan += totalBanW;
+    tot['pct_' + wKey] = totalBanW > 0 ? (tot[wKey] || 0) / totalBanW : 0;
   });
-  tot['pct_tổng'] = tot.tổng > 0 ? 1 : 0;
+  
+  tot['pct_tổng'] = grandTotalBan > 0 ? (tot.tổng || 0) / grandTotalBan : 0;
 
   let headers = ['Vùng'];
   let cols = ['vùng'];
@@ -804,10 +815,23 @@ function renderMain(rows) {
 function renderLuyKe() {
   if (!DATA || !DATA.months) return;
   const months = DATA.months;
-  const m_cur = months[months.length - 1];
-  const m_prv = months[months.length - 2];
+  
+  if (months.length === 0) {
+    document.getElementById('thead-luyke').innerHTML = '<tr><th class="txt-l">Vùng</th><th>Dữ liệu</th></tr>';
+    document.getElementById('tbody-luyke').innerHTML = '<tr><td class="txt-l">Chưa có dữ liệu</td><td>Chưa có phiếu tháng 9</td></tr>';
+    return;
+  }
 
-  let headers = ['Vùng'].concat(months.map(m => 'Th.' + m)).concat(['% Tăng/Giảm (Th.'+m_cur+' so Th.'+(m_prv||'')+')']);
+  const m_cur = months[months.length - 1];
+  const m_prv = months.length > 1 ? months[months.length - 2] : '';
+
+  let headers = ['Vùng'].concat(months.map(m => 'Th.' + m));
+  if (m_prv) {
+      headers.push('% Tăng/Giảm (Th.' + m_cur + ' so Th.' + m_prv + ')');
+  } else {
+      headers.push('% Tăng/Giảm');
+  }
+  
   let cols   = ['vùng'].concat(months.map(m => 'Th' + m)).concat(['tang_giam']);
   
   const fmtFn = (c, v) => {
@@ -825,7 +849,7 @@ function filterVuong() {
   const rows = vF ? DATA.vuong_rows.filter(r => r.vùng === vF) : [].concat(DATA.vuong_rows);
   const weeks = DATA.weeks;
   const wCur = DATA.w_cur;
-  const headers = ['Vùng'].concat(weeks).concat(['Tổng', 'Phiếu bán ' + wCur, 'Tỉ lệ phiếu']);
+  const headers = ['Vùng'].concat(weeks).concat(['Tổng', 'Phiếu bán ' + wCur, 'Tỉ lệ']);
   const cols   = ['vùng'].concat(weeks.map(w => w.toLowerCase())).concat(['tổng', 'ban_w_cur', 'ti_le']);
   const fmtFn = (c, v) => {
     if (c === 'ti_le') return '<span class="' + tiLeClass(v) + '">' + pct(v) + '</span>';
@@ -852,7 +876,7 @@ function filterAsm() {
   
   const w_cur = DATA.w_cur;
   const w_prv = DATA.w_prv;
-  const headers = ['ASM','Vùng', w_prv, w_cur,'Tăng/Giảm','SL bán ' + w_cur,'Tỉ lệ'];
+  const headers = ['ASM','Vùng', w_prv, w_cur,'Tăng/Giảm','Phiếu bán ' + w_cur,'Tỉ lệ'];
   const cols   = ['asm','vùng', w_prv.toLowerCase(), w_cur.toLowerCase(),'tang_giam','ban_w_cur','ti_le'];
   const fmtFn = (c, v) => {
     if (c === 'tang_giam') return '<span class="' + deltaClass(v) + '">' + deltaSign(v) + '</span>';
@@ -955,7 +979,7 @@ function processExcelBuffer(arrayBuffer) {
   
   let svtSet = new Set();
   dataSVT.forEach(r => {
-     let s = norm(r['Shop'] || r['Cửa hàng']);
+     let s = norm(r['Shop'] || r['Cửa hàng']).toLowerCase();
      if (s) svtSet.add(s);
   });
 
@@ -963,30 +987,40 @@ function processExcelBuffer(arrayBuffer) {
   let shopToAsm = {};
   let allAsms = new Set();
   let allVungs = new Set();
+  let shopToOrig = {};
+  let asmOrig = {};
 
-  // ĐÃ GỠ BỎ ĐIỀU KIỆN "LOẠI DANH BẠ" TẠI ĐÂY
   dataDanhba.forEach(r => {
-    let s = norm(r['Cửa hàng']);
+    let sRaw = norm(r['Cửa hàng']);
+    let sKey = sRaw.toLowerCase();
     let v = norm(r['Vùng miền']);
-    let a = norm(r['Email ASM']);
+    let aRaw = norm(r['Email ASM']);
     
-    if (s) {
+    if (sKey) {
+      shopToOrig[sKey] = sRaw;
       if (v && v.toLowerCase() !== 'loại') {
-        shopToVung[s] = v;
+        shopToVung[sKey] = v;
         allVungs.add(v);
       }
-      if (a) {
-        shopToAsm[s] = a;
-        allAsms.add(a);
+      if (aRaw) {
+        let aKey = aRaw.toLowerCase();
+        shopToAsm[sKey] = aKey;
+        asmOrig[aKey] = aRaw;
+        allAsms.add(aRaw);
       }
     }
   });
 
   dataNhan.forEach(r => {
-    let s = norm(r['Cửa hàng']);
+    let sRaw = norm(r['Cửa hàng']);
+    let sKey = sRaw.toLowerCase();
     let v = norm(r['Vùng kinh doanh shop']);
     if (v.toLowerCase() === 'loại') return; 
-    if (s && v && !shopToVung[s]) shopToVung[s] = v;
+    
+    if (sKey) {
+      shopToOrig[sKey] = sRaw;
+      if (v && !shopToVung[sKey]) shopToVung[sKey] = v;
+    }
     if (v) allVungs.add(v);
   });
 
@@ -1010,7 +1044,15 @@ function processExcelBuffer(arrayBuffer) {
   let latestWeeks = weeksArr.slice(-4);
   let w_cur = latestWeeks[latestWeeks.length - 1] || "";
   let w_prv = latestWeeks[latestWeeks.length - 2] || "";
-  let monthsArr = Array.from(monthsSet).sort((a,b) => (parseInt(a.replace(/[^0-9]/g,''))||0) - (parseInt(b.replace(/[^0-9]/g,''))||0));
+  
+  let monthsArrRaw = Array.from(monthsSet).sort((a,b) => (parseInt(a.replace(/[^0-9]/g,''))||0) - (parseInt(b.replace(/[^0-9]/g,''))||0));
+  
+  // [CẤU HÌNH] Đổi thành "false" nếu muốn hiển thị LẠI TOÀN BỘ các tháng từ đầu năm
+  const CHI_HIEN_TU_THANG_9 = true; 
+  let monthsArr = monthsArrRaw;
+  if (CHI_HIEN_TU_THANG_9) {
+      monthsArr = monthsArrRaw.filter(m => (parseInt(m.replace(/[^0-9]/g,''))||0) >= 9);
+  }
 
   let vungStats = {};
   let asmStats = {};
@@ -1022,81 +1064,87 @@ function processExcelBuffer(arrayBuffer) {
     monthsArr.forEach(m => { vungStats[v].nhan_all_m[m]=0; vungStats[v].ban_svt_m[m]=0; });
   });
 
-  const getShopStat = (s) => {
-    if (!shopStats[s]) {
-       let v = shopToVung[s] || 'Khác';
-       let a = shopToAsm[s] || '';
-       shopStats[s] = { vung: v, asm: a, svt: svtSet.has(s), nhan_all_w: {}, ban_svt_cur: 0 };
-       latestWeeks.forEach(wk => shopStats[s].nhan_all_w[wk] = 0);
+  const getShopStat = (sKey, fallbackName) => {
+    if (!shopStats[sKey]) {
+       let orig = shopToOrig[sKey] || fallbackName || sKey;
+       let v = shopToVung[sKey] || 'Khác';
+       let aKey = shopToAsm[sKey];
+       let aOrig = aKey ? (asmOrig[aKey] || aKey) : '';
+       shopStats[sKey] = { shopName: orig, vung: v, asm: aOrig, asmKey: aKey, svt: svtSet.has(sKey), nhan_all_w: {}, ban_svt_cur: 0 };
+       latestWeeks.forEach(wk => shopStats[sKey].nhan_all_w[wk] = 0);
     }
-    return shopStats[s];
+    return shopStats[sKey];
   };
   
-  // ĐỔ TOÀN BỘ SHOP TỪ DANH BẠ VÀO MẢNG TRƯỚC KHI TÍNH TOÁN
-  for (let s in shopToVung) {
-    getShopStat(s);
+  for (let sKey in shopToVung) {
+    getShopStat(sKey, shopToOrig[sKey]);
   }
   
-  const getAsmStat = (a) => {
-    if (!asmStats[a]) {
-       let v = ''; for(let s in shopToAsm) { if(shopToAsm[s]===a) { v = shopToVung[s]; break; } }
-       asmStats[a] = { vung: v||'Khác', nhan_all_w: {}, ban_svt_cur: 0 };
-       latestWeeks.forEach(wk => asmStats[a].nhan_all_w[wk] = 0);
+  const getAsmStat = (aKey, fallbackName) => {
+    if (!asmStats[aKey]) {
+       let orig = asmOrig[aKey] || fallbackName || aKey;
+       let v = ''; 
+       for(let sK in shopToAsm) { if(shopToAsm[sK]===aKey) { v = shopToVung[sK]; break; } }
+       asmStats[aKey] = { asmName: orig, vung: v||'Khác', nhan_all_w: {}, ban_svt_cur: 0 };
+       latestWeeks.forEach(wk => asmStats[aKey].nhan_all_w[wk] = 0);
     }
-    return asmStats[a];
+    return asmStats[aKey];
   };
 
   let kpi_n_cur = 0, kpi_n_prv = 0;
   
   dataNhan.forEach(r => {
-    let s = norm(r['Cửa hàng']);
-    if (!s) return; 
-    let v = shopToVung[s] || norm(r['Vùng kinh doanh shop']);
+    let sRaw = norm(r['Cửa hàng']);
+    if (!sRaw) return; 
+    let sKey = sRaw.toLowerCase();
+    
+    let v = shopToVung[sKey] || norm(r['Vùng kinh doanh shop']);
     if (v.toLowerCase() === 'loại') return; 
-    let a = shopToAsm[s] || '';
+    let aKey = shopToAsm[sKey];
+    
     let w = norm(r['Tuần']).toUpperCase();
     let m = norm(r['Tháng']);
 
     if (!vungStats[v]) { vungStats[v] = { nhan_all_w: {}, ban_svt_w: {}, nhan_all_m: {}, ban_svt_m: {} }; allVungs.add(v); }
 
-    if (m) vungStats[v].nhan_all_m[m] = (vungStats[v].nhan_all_m[m] || 0) + 1;
+    if (m && monthsArr.includes(m)) vungStats[v].nhan_all_m[m] = (vungStats[v].nhan_all_m[m] || 0) + 1;
     if (latestWeeks.includes(w)) {
       vungStats[v].nhan_all_w[w] = (vungStats[v].nhan_all_w[w] || 0) + 1;
       if (w === w_cur) kpi_n_cur++;
       if (w === w_prv) kpi_n_prv++;
-      getShopStat(s).nhan_all_w[w] = (getShopStat(s).nhan_all_w[w] || 0) + 1;
-      if (a) getAsmStat(a).nhan_all_w[w] = (getAsmStat(a).nhan_all_w[w] || 0) + 1;
+      getShopStat(sKey, sRaw).nhan_all_w[w] = (getShopStat(sKey, sRaw).nhan_all_w[w] || 0) + 1;
+      if (aKey) getAsmStat(aKey).nhan_all_w[w] = (getAsmStat(aKey).nhan_all_w[w] || 0) + 1;
     }
   });
 
   let kpi_ban_svt_cur = 0, kpi_ban_svt_prv = 0;
   
   dataBan.forEach(r => {
-    let s = norm(r['Shop Name'] || r['Cửa hàng']);
-    if (!s) return;
-    let isSVT = svtSet.has(s);
-    if (!isSVT) {
-        let rawSvt = norm(r['Shop vệ tinh']).toLowerCase();
-        if (rawSvt === 'shop vệ tinh' || rawSvt === 'svt' || rawSvt === 'có' || rawSvt === 'y') isSVT = true;
-    }
-    if (!isSVT) return; 
+    let sRaw = norm(r['Shop Name'] || r['Cửa hàng']);
+    if (!sRaw) return;
+    let sKey = sRaw.toLowerCase();
 
-    let v = shopToVung[s] || 'Khác';
+    let phanLoai = norm(r['Phân loại'] || r['Phân Loại']);
+    if (!phanLoai && Object.keys(r).length >= 4) {
+        phanLoai = norm(r[Object.keys(r)[3]]);
+    }
+    if (phanLoai.toLowerCase() !== 'lấy') return; 
+
+    let v = shopToVung[sKey] || 'Khác';
     if (v.toLowerCase() === 'loại') return; 
-    let a = shopToAsm[s] || '';
+    let aKey = shopToAsm[sKey];
     let w = norm(r['Tuần']).toUpperCase();
     let m = norm(r['Tháng']);
 
     if (!vungStats[v]) { vungStats[v] = { nhan_all_w: {}, ban_svt_w: {}, nhan_all_m: {}, ban_svt_m: {} }; allVungs.add(v); }
-    if (m) vungStats[v].ban_svt_m[m] = (vungStats[v].ban_svt_m[m] || 0) + 1;
+    if (m && monthsArr.includes(m)) vungStats[v].ban_svt_m[m] = (vungStats[v].ban_svt_m[m] || 0) + 1;
     if (latestWeeks.includes(w)) {
       vungStats[v].ban_svt_w[w] = (vungStats[v].ban_svt_w[w] || 0) + 1;
       if (w === w_cur) kpi_ban_svt_cur++;
       if (w === w_prv) kpi_ban_svt_prv++;
       if (w === w_cur) {
-        getShopStat(s).ban_svt_cur++;
-        getShopStat(s).svt = true;
-        if (a) getAsmStat(a).ban_svt_cur++;
+        getShopStat(sKey, sRaw).ban_svt_cur++;
+        if (aKey) getAsmStat(aKey).ban_svt_cur++;
       }
     }
   });
@@ -1125,10 +1173,11 @@ function processExcelBuffer(arrayBuffer) {
     if (v === 'Khác' || !allVungs.has(v)) continue;
     let st = vungStats[v], row = { vùng: v, tổng: 0 };
     latestWeeks.forEach(wk => {
-       let val = st.nhan_all_w[wk] || 0;
-       row[wk.toLowerCase()] = val;
+       let wKey = wk.toLowerCase();
+       let val = st.nhan_all_w[wk] || 0; 
+       row[wKey] = val;
        row.tổng += val;
-       main_tot[wk.toLowerCase()] += val;
+       main_tot[wKey] += val;
        main_tot.tổng += val;
     });
     
@@ -1153,7 +1202,8 @@ function processExcelBuffer(arrayBuffer) {
   monthsArr.forEach(m => luyke_tot['Th' + m] = 0);
   let tot_n_m = {}, tot_b_m = {};
   monthsArr.forEach(m => { tot_n_m[m] = 0; tot_b_m[m] = 0; });
-  let m_cur = monthsArr[monthsArr.length - 1], m_prv = monthsArr[monthsArr.length - 2];
+  let m_cur = monthsArr.length > 0 ? monthsArr[monthsArr.length - 1] : null;
+  let m_prv = monthsArr.length > 1 ? monthsArr[monthsArr.length - 2] : null;
 
   for (let v in vungStats) {
     if (v === 'Khác' || !allVungs.has(v)) continue;
@@ -1163,11 +1213,11 @@ function processExcelBuffer(arrayBuffer) {
        row['Th' + m] = b > 0 ? n / b : 0;
        tot_n_m[m] += n; tot_b_m[m] += b;
     });
-    row.tang_giam = (row['Th' + m_cur] || 0) - (row['Th' + m_prv] || 0);
+    row.tang_giam = m_cur ? ((row['Th' + m_cur] || 0) - (row['Th' + m_prv] || 0)) : 0;
     luyke_rows.push(row);
   }
   monthsArr.forEach(m => luyke_tot['Th' + m] = tot_b_m[m] > 0 ? tot_n_m[m] / tot_b_m[m] : 0);
-  luyke_tot.tang_giam = (luyke_tot['Th' + m_cur] || 0) - (luyke_tot['Th' + m_prv] || 0);
+  luyke_tot.tang_giam = m_cur ? ((luyke_tot['Th' + m_cur] || 0) - (luyke_tot['Th' + m_prv] || 0)) : 0;
   NEW_DATA.luyke_rows = luyke_rows.sort((a,b)=>a.vùng.localeCompare(b.vùng));
   NEW_DATA.luyke_tot = luyke_tot;
 
@@ -1179,11 +1229,14 @@ function processExcelBuffer(arrayBuffer) {
     if (v === 'Khác' || !allVungs.has(v)) continue;
     let st = vungStats[v], row = { vùng: v, tổng: 0 };
     latestWeeks.forEach(wk => {
+       let wKey = wk.toLowerCase();
        let val = st.nhan_all_w[wk] || 0; 
-       row[wk.toLowerCase()] = val;
+       row[wKey] = val;
        row.tổng += val;
-       vuong_tot[wk.toLowerCase()] += val;
+       vuong_tot[wKey] += val;
        vuong_tot.tổng += val;
+       // Lưu thêm số bán của từng tuần để bảng Main tính tỉ lệ
+       row['ban_' + wKey] = st.ban_svt_w[wk] || 0; 
     });
     row.ban_w_cur = st.ban_svt_w[w_cur] || 0;
     row.ti_le = row.ban_w_cur > 0 ? (row[w_cur.toLowerCase()] || 0) / row.ban_w_cur : 0;
@@ -1195,8 +1248,8 @@ function processExcelBuffer(arrayBuffer) {
   NEW_DATA.vuong_tot = vuong_tot;
 
   let asm_rows = [];
-  for (let a in asmStats) {
-    let st = asmStats[a], row = { asm: a, vùng: st.vung, ban_w_cur: st.ban_svt_cur };
+  for (let aKey in asmStats) {
+    let st = asmStats[aKey], row = { asm: st.asmName, asmKey: aKey, vùng: st.vung, ban_w_cur: st.ban_svt_cur };
     let n_cur = st.nhan_all_w[w_cur] || 0, n_prv = st.nhan_all_w[w_prv] || 0;
     row[w_prv.toLowerCase()] = n_prv;
     row[w_cur.toLowerCase()] = n_cur;
@@ -1207,8 +1260,8 @@ function processExcelBuffer(arrayBuffer) {
   NEW_DATA.asm_rows = asm_rows.sort((a,b)=>a.asm.localeCompare(b.asm));
 
   let shop_rows = [];
-  for (let s in shopStats) {
-    let st = shopStats[s], row = { shop: s, asm: st.asm, vùng: st.vung, svt: st.svt, tổng: 0, ban_w_cur: st.ban_svt_cur };
+  for (let sKey in shopStats) {
+    let st = shopStats[sKey], row = { shop: st.shopName, asm: st.asm, vùng: st.vung, svt: st.svt, tổng: 0, ban_w_cur: st.ban_svt_cur };
     latestWeeks.forEach(wk => {
        let val = st.nhan_all_w[wk] || 0;
        row[wk.toLowerCase()] = val;
