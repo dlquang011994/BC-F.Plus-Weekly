@@ -379,10 +379,14 @@ function renderKPI() {
 
   document.getElementById('kpi-n').textContent = k.n_cur.toLocaleString();
   const nSub = document.getElementById('kpi-n-sub');
-  nSub.textContent = (k.wow_n >= 0 ? '+' : '') + k.wow_n + ' so ' + wPrv;
+  nSub.textContent = (k.wow_n >= 0 ? '+' : '') + k.wow_n.toLocaleString() + ' so ' + wPrv;
   nSub.className = 'sub ' + (k.wow_n >= 0 ? 'up' : 'dn');
 
   document.getElementById('kpi-ban').textContent = k.ban_svt_cur.toLocaleString();
+  const wowBan = k.ban_svt_cur - k.ban_svt_prv;
+  const banSub = document.getElementById('kpi-ban-sub');
+  banSub.textContent = (wowBan >= 0 ? '+' : '') + wowBan.toLocaleString() + ' so ' + wPrv;
+  banSub.className = 'sub ' + (wowBan >= 0 ? 'up' : 'dn');
 
   document.getElementById('kpi-ti').textContent = (k.ti_le_cur * 100).toFixed(2) + '%';
   const tiSub = document.getElementById('kpi-ti-sub');
