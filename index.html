@@ -1282,21 +1282,32 @@ function processExcelBuffer(arrayBuffer) {
   renderAll();
 }
 
-// ================= HÀM KÉO DATA TỪ GOOGLE DRIVE =================
+// ================= CẦU NỐI DATA TÓM TẮT VỚI QUY TẮC HIỂN THỊ CÓ SẴN =================
+function applySummaryDisplayRules(summary) {
+  const isNARegion = (v) => ['#N/A', 'N/A'].includes(String(v || '').trim().toUpperCase());
+  const monthNumber = (m) => parseFloat(String(m || '').replace(',', '.'));
+
+  summary.months = (summary.months || []).filter(m => monthNumber(m) >= 9);
+  ['vùng_list', 'main_rows', 'luyke_rows', 'vuong_rows', 'shop_rows', 'asm_rows'].forEach(key => {
+    if (!Array.isArray(summary[key])) return;
+    summary[key] = summary[key].filter(row => !isNARegion(typeof row === 'string' ? row : row.vùng));
+  });
+  return summary;
+}
+
+// ================= HÀM KÉO DATA TỪ FILE TÓM TẮT =================
 async function loadDataFromDrive() {
   document.getElementById('loading-overlay').style.display = 'block';
-  
-  const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTZGLwWIcCqTCAjVW0FyEQCQYvQ1MP3O5HRiFsQ6tZoN3DEDXq9ys59pXtNrTSA8w/pub?output=xlsx";
-  
   try {
-    const response = await fetch(url);
+    const response = await fetch('./dashboard-data.json', { cache: 'no-store' });
     if (!response.ok) throw new Error('Network Error');
-    const arrayBuffer = await response.arrayBuffer();
-    processExcelBuffer(arrayBuffer);
+    DATA = applySummaryDisplayRules(await response.json());
+    document.getElementById('loading-overlay').style.display = 'none';
+    renderAll();
   } catch (error) {
     console.error(error);
     document.getElementById('loading-overlay').style.display = 'none';
-    alert('Không thể tải tự động từ Google Drive. Vui lòng tải file thủ công bằng nút phía trên.');
+    alert('Không thể tải dữ liệu Dashboard. Vui lòng thử lại sau ít phút.');
   }
 }
 
