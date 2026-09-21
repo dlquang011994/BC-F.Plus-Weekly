@@ -1134,7 +1134,7 @@ function processExcelBuffer(arrayBuffer) {
     }
     if (phanLoai.toLowerCase() !== 'lấy') return; 
 
-    let v = shopToVung[sKey] || 'Khác';
+    let v = norm(r['Vùng kinh doạnh'] || r['Vùng kinh doanh']) || shopToVung[sKey] || 'Khác';
     if (v.toLowerCase() === 'loại') return; 
     let aKey = shopToAsm[sKey];
     let w = norm(r['Tuần']).toUpperCase();
