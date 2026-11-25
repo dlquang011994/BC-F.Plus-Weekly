@@ -252,6 +252,10 @@ def build(input_path: Path) -> dict:
             receipts = stat["nhan_all_m"][month]
             sales = stat["ban_svt_m"][month]
             cumulative[f"Th{month}"] = receipts / sales if sales else 0
+            # Raw monthly counts (additive): lets the frontend group regions
+            # exactly for the Review cluster without touching existing keys.
+            cumulative[f"nhan_Th{month}"] = receipts
+            cumulative[f"ban_Th{month}"] = sales
             total_receipts_by_month[month] += receipts
             total_sales_by_month[month] += sales
         luyke_rows.append(cumulative)
@@ -262,6 +266,8 @@ def build(input_path: Path) -> dict:
         row["tang_giam"] = (row.get(f"Th{current_month}", 0) - row.get(f"Th{previous_month}", 0)) if current_month else 0
     for month in months_to_show:
         luyke_total[f"Th{month}"] = total_receipts_by_month[month] / total_sales_by_month[month] if total_sales_by_month[month] else 0
+        luyke_total[f"nhan_Th{month}"] = total_receipts_by_month[month]
+        luyke_total[f"ban_Th{month}"] = total_sales_by_month[month]
     luyke_total["tang_giam"] = (luyke_total.get(f"Th{current_month}", 0) - luyke_total.get(f"Th{previous_month}", 0)) if current_month else 0
 
     total_current = main_total.get(current_week.lower(), 0)

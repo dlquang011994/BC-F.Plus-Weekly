@@ -192,6 +192,15 @@ tr.tot { background: var(--fpt-blue) !important; }
 tr.tot td { border-bottom: none; color: #fff !important; font-weight: 700; }
 tr.tot:hover td { background: var(--fpt-blue) !important; }
 
+/* CỤM REVIEW: tách bạch bằng màu nền nhạt, đúng chỗ, không màu chói */
+.review-cluster { background: #fff7ed; border: 1px solid #fed7aa; }
+.review-note { background: #fff; margin: 16px 16px 0 16px; padding: 10px 14px; border-radius: 6px; font-size: 13px; color: #4b5563; line-height: 1.6; }
+.review-card { background: #fff; border-radius: 6px; margin: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.06); overflow: hidden; }
+.review-card-main { border-top: 3px solid #fdba74; }
+.review-card-main .tbl-header { background: #ffedd5; }
+.review-card-luyke { border-top: 3px solid #5eead4; }
+.review-card-luyke .tbl-header { background: #ccfbf1; }
+
 .cell-green { color: var(--fpt-green); font-weight: 700; }
 .cell-orange { color: var(--fpt-orange); font-weight: 700; }
 .cell-up { background: var(--bg-green); color: var(--text-green); font-weight: 600; padding: 2px 6px; border-radius: 4px; }
@@ -295,6 +304,32 @@ tr.tot:hover td { background: var(--fpt-blue) !important; }
           <table id="tbl-luyke"><thead id="thead-luyke"></thead><tbody id="tbody-luyke"></tbody></table>
           </div>
         </div>
+
+        <!-- CỤM REVIEW: gộp vùng HCM/HNI và Vùng khác (chỉ cộng dồn số đã có, không động bảng cũ) -->
+        <div class="tbl-wrap review-cluster">
+          <div class="tbl-header">
+            <span class="tbl-name" ondblclick="renameTbl(this)">Review tỉ lệ theo vùng HCM/HNI và Vùng khác</span>
+          </div>
+          <div class="review-note">
+            HCM/HNI là Hà Nội + Hồ Chí Minh gộp lại. Vùng khác là tất cả vùng còn lại gộp lại. Tỉ lệ tính lại từ tổng số đã gộp.
+          </div>
+          <div class="review-card review-card-main">
+            <div class="tbl-header">
+              <span class="tbl-name" ondblclick="renameTbl(this)">Phiếu nhận 4 tuần gần nhất</span>
+            </div>
+            <div class="table-responsive">
+            <table id="tbl-review-main"><thead id="thead-review-main"></thead><tbody id="tbody-review-main"></tbody></table>
+            </div>
+          </div>
+          <div class="review-card review-card-luyke">
+            <div class="tbl-header">
+              <span class="tbl-name" ondblclick="renameTbl(this)">Luỹ kế tỉ lệ theo tháng</span>
+            </div>
+            <div class="table-responsive">
+            <table id="tbl-review-luyke"><thead id="thead-review-luyke"></thead><tbody id="tbody-review-luyke"></tbody></table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="tab2" class="tab-content">
@@ -365,6 +400,8 @@ function renderAll() {
   buildFilters();
   renderMain(DATA.main_rows);
   renderLuyKe();
+  renderReviewMain();
+  renderReviewLuyKe();
   filterVuong();
   filterAsm();
   filterShop();
@@ -847,6 +884,153 @@ function renderLuyKe() {
   buildTbody('luyke', DATA.luyke_rows, DATA.luyke_tot, cols, fmtFn);
 }
 
+// ================= CỤM REVIEW: GỘP VÙNG HCM/HNI VÀ VÙNG KHÁC =================
+// Chỉ cộng dồn số đã có trong DATA. Không sửa bảng cũ, không sửa DATA gốc.
+// HCM/HNI = Hà Nội + Hồ Chí Minh. Vùng khác = mọi vùng còn lại (trừ dòng #N/A).
+const REVIEW_HCM_HNI = ['Hà Nội', 'Hồ Chí Minh'];
+
+function isReviewNA(v) {
+  return ['#N/A', 'N/A'].includes(String(v || '').trim().toUpperCase());
+}
+
+function reviewGroupOf(region) {
+  return REVIEW_HCM_HNI.includes(String(region || '').trim()) ? 'HCM/HNI' : 'Vùng khác';
+}
+
+function buildReviewMainRows() {
+  const weeks = DATA.weeks;
+  const groups = {};
+  ['HCM/HNI', 'Vùng khác'].forEach(g => {
+    const r = { vùng: g, tổng: 0, sl_tang_giam: 0, ti_le_tang_giam: 0 };
+    weeks.forEach(wk => { r[wk.toLowerCase()] = 0; r['ban_' + wk.toLowerCase()] = 0; });
+    groups[g] = r;
+  });
+  DATA.main_rows.forEach(r => {
+    if (isReviewNA(r.vùng)) return;
+    const g = groups[reviewGroupOf(r.vùng)];
+    weeks.forEach(wk => { g[wk.toLowerCase()] += (r[wk.toLowerCase()] || 0); });
+    g.tổng += (r.tổng || 0);
+  });
+  DATA.vuong_rows.forEach(vr => {
+    if (isReviewNA(vr.vùng)) return;
+    const g = groups[reviewGroupOf(vr.vùng)];
+    weeks.forEach(wk => { g['ban_' + wk.toLowerCase()] += (vr['ban_' + wk.toLowerCase()] || 0); });
+  });
+  const wCur = String(DATA.w_cur || '').toLowerCase();
+  const wPrv = String(DATA.w_prv || '').toLowerCase();
+  Object.values(groups).forEach(g => {
+    let totalBan = 0;
+    weeks.forEach(wk => {
+      const wKey = wk.toLowerCase();
+      const banW = g['ban_' + wKey] || 0;
+      totalBan += banW;
+      g['pct_' + wKey] = banW > 0 ? (g[wKey] || 0) / banW : 0;
+    });
+    g['pct_tổng'] = totalBan > 0 ? (g.tổng || 0) / totalBan : 0;
+    g.sl_tang_giam = (g[wCur] || 0) - (g[wPrv] || 0);
+    g.ti_le_tang_giam = (g[wPrv] || 0) > 0 ? ((g[wCur] || 0) - (g[wPrv] || 0)) / g[wPrv] : 0;
+  });
+  return [groups['HCM/HNI'], groups['Vùng khác']];
+}
+
+function renderReviewMain() {
+  if (!DATA) return;
+  const rows = buildReviewMainRows();
+  const weeks = DATA.weeks;
+  const tot = DATA.main_tot; // dòng Tổng đã có sẵn; 2 dòng gộp cộng lại phải bằng đúng dòng này
+  let headers = ['Vùng'];
+  let cols = ['vùng'];
+  weeks.forEach(wk => {
+    headers.push('Phiếu ' + wk);
+    cols.push(wk.toLowerCase());
+    headers.push('Tỉ lệ ' + wk);
+    cols.push('pct_' + wk.toLowerCase());
+  });
+  headers.push('Tổng', 'Tỉ lệ Tổng', 'SL Tăng/Giảm', 'Tỉ lệ tăng/giảm');
+  cols.push('tổng', 'pct_tổng', 'sl_tang_giam', 'ti_le_tang_giam');
+  const fmtFn = (c, v) => {
+    if (c.startsWith('pct_')) {
+      return (v * 100).toFixed(2) + '%';
+    }
+    if (c === 'ti_le_tang_giam') {
+      return '<span class="' + deltaClass(v) + '">' + (v >= 0 ? '+' : '') + (v*100).toFixed(2) + '%</span>';
+    }
+    if (c === 'sl_tang_giam') {
+      return '<span class="' + deltaClass(v) + '">' + deltaSign(v) + '</span>';
+    }
+    return v;
+  };
+  buildThead('review-main', headers, cols);
+  buildTbody('review-main', rows, tot, cols, fmtFn);
+}
+
+function buildReviewLuyKeRows() {
+  const months = DATA.months;
+  const groups = {};
+  ['HCM/HNI', 'Vùng khác'].forEach(g => {
+    const r = { vùng: g, tang_giam: 0 };
+    months.forEach(m => { r['nhan_Th' + m] = 0; r['ban_Th' + m] = 0; });
+    groups[g] = r;
+  });
+  let hasRaw = false;
+  DATA.luyke_rows.forEach(r => {
+    if (isReviewNA(r.vùng)) return;
+    const g = groups[reviewGroupOf(r.vùng)];
+    months.forEach(m => {
+      const nhan = r['nhan_Th' + m];
+      const ban = r['ban_Th' + m];
+      if (typeof nhan === 'number' && typeof ban === 'number') {
+        hasRaw = true;
+        g['nhan_Th' + m] += nhan;
+        g['ban_Th' + m] += ban;
+      }
+    });
+  });
+  const mCur = months[months.length - 1];
+  const mPrv = months.length > 1 ? months[months.length - 2] : '';
+  Object.values(groups).forEach(g => {
+    months.forEach(m => {
+      const ban = g['ban_Th' + m] || 0;
+      g['Th' + m] = ban > 0 ? (g['nhan_Th' + m] || 0) / ban : 0;
+    });
+    g.tang_giam = mPrv ? ((g['Th' + mCur] || 0) - (g['Th' + mPrv] || 0)) : 0;
+  });
+  return { rows: [groups['HCM/HNI'], groups['Vùng khác']], hasRaw };
+}
+
+function renderReviewLuyKe() {
+  if (!DATA || !DATA.months) return;
+  const months = DATA.months;
+  if (months.length === 0) {
+    document.getElementById('thead-review-luyke').innerHTML = '<tr><th class="txt-l">Vùng</th><th>Dữ liệu</th></tr>';
+    document.getElementById('tbody-review-luyke').innerHTML = '<tr><td class="txt-l">Chưa có dữ liệu</td><td>Chưa có phiếu tháng 9</td></tr>';
+    return;
+  }
+  const built = buildReviewLuyKeRows();
+  // File số cũ chưa có số tháng gốc thì chưa hiện số, tránh hiện số sai.
+  if (!built.hasRaw) {
+    document.getElementById('thead-review-luyke').innerHTML = '<tr><th class="txt-l">Vùng</th><th>Đang cập nhật</th></tr>';
+    document.getElementById('tbody-review-luyke').innerHTML = '<tr><td class="txt-l">HCM/HNI và Vùng khác</td><td>Số tháng đang được tính lại, quay lại sau ít phút</td></tr>';
+    return;
+  }
+  const m_cur = months[months.length - 1];
+  const m_prv = months.length > 1 ? months[months.length - 2] : '';
+  let headers = ['Vùng'].concat(months.map(m => 'Th.' + m));
+  if (m_prv) {
+      headers.push('% Tăng/Giảm (Th.' + m_cur + ' so Th.' + m_prv + ')');
+  } else {
+      headers.push('% Tăng/Giảm');
+  }
+  let cols = ['vùng'].concat(months.map(m => 'Th' + m)).concat(['tang_giam']);
+  const fmtFn = (c, v) => {
+    if (c === 'tang_giam') return '<span class="' + deltaClass(v) + '">' + (v >= 0 ? '+' : '') + (v*100).toFixed(2) + '%</span>';
+    if (c === 'vùng') return v;
+    return pct(v);
+  };
+  buildThead('review-luyke', headers, cols);
+  buildTbody('review-luyke', built.rows, DATA.luyke_tot, cols, fmtFn);
+}
+
 function filterVuong() {
   if (!DATA) return;
   const vF = document.getElementById('f-vung-vuong').value;
@@ -1215,12 +1399,15 @@ function processExcelBuffer(arrayBuffer) {
     monthsArr.forEach(m => {
        let n = st.nhan_all_m[m] || 0, b = st.ban_svt_m[m] || 0;
        row['Th' + m] = b > 0 ? n / b : 0;
+       row['nhan_Th' + m] = n;
+       row['ban_Th' + m] = b;
        tot_n_m[m] += n; tot_b_m[m] += b;
     });
     row.tang_giam = m_cur ? ((row['Th' + m_cur] || 0) - (row['Th' + m_prv] || 0)) : 0;
     luyke_rows.push(row);
   }
   monthsArr.forEach(m => luyke_tot['Th' + m] = tot_b_m[m] > 0 ? tot_n_m[m] / tot_b_m[m] : 0);
+  monthsArr.forEach(m => { luyke_tot['nhan_Th' + m] = tot_n_m[m]; luyke_tot['ban_Th' + m] = tot_b_m[m]; });
   luyke_tot.tang_giam = m_cur ? ((luyke_tot['Th' + m_cur] || 0) - (luyke_tot['Th' + m_prv] || 0)) : 0;
   NEW_DATA.luyke_rows = luyke_rows.sort((a,b)=>a.vùng.localeCompare(b.vùng));
   NEW_DATA.luyke_tot = luyke_tot;
